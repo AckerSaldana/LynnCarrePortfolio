@@ -1,0 +1,166 @@
+---
+interface Props {
+  items: { label: string; target: number }[];
+}
+
+const { items } = Astro.props;
+---
+
+<div
+  class="menu"
+  data-menu
+  role="dialog"
+  aria-modal="true"
+  aria-label="Índice"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="menu__bar">
+    <span class="menu__brand">Aylinn Carré</span>
+    <button type="button" class="menu__close" data-menu-close>
+      <span class="menu__close-x" aria-hidden="true">×</span> Cerrar
+    </button>
+  </div>
+
+  <nav class="menu__nav" aria-label="Secciones">
+    {items.map((item) => (
+      <Fragment>
+        <span class="menu__rule" aria-hidden="true"></span>
+        <button type="button" class="menu__item" data-target={item.target}>
+          <span class="menu__label"><span class="menu__label-inner">{item.label}</span></span>
+          <span class="menu__arrow" aria-hidden="true">→</span>
+        </button>
+      </Fragment>
+    ))}
+    <span class="menu__rule" aria-hidden="true"></span>
+  </nav>
+</div>
+
+<style>
+  .menu {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    padding: var(--frame-pad);
+    background: var(--blue);
+    color: var(--paper);
+    visibility: hidden;
+    clip-path: inset(0 0 100% 0);
+  }
+
+  .menu:focus {
+    outline: none;
+  }
+
+  .menu__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.76rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .menu__brand {
+    font-weight: 600;
+  }
+
+  .menu__close {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+
+  .menu__close-x {
+    font-size: 1.35em;
+    line-height: 1;
+  }
+
+  .menu__close:hover {
+    color: var(--yellow);
+  }
+
+  .menu__nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .menu__rule {
+    width: 100%;
+    height: 1px;
+    background: color-mix(in srgb, var(--paper) 42%, transparent);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .menu__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: clamp(0.45rem, 1.3vw, 1rem) 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .menu__label {
+    display: block;
+    overflow: hidden;
+    padding-top: 0.08em;
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0, 1);
+  }
+
+  .menu__label-inner {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.2rem, 8.5vw, 7rem);
+    transition: color 0.3s ease;
+  }
+
+  .menu__arrow {
+    font-size: clamp(1.3rem, 3vw, 2.4rem);
+    opacity: 0;
+    transform: translateX(-14px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .menu__item:hover .menu__label,
+  .menu__item:focus-visible .menu__label {
+    transform: translateX(clamp(0.5rem, 1.6vw, 1.6rem));
+  }
+
+  .menu__item:hover .menu__label-inner,
+  .menu__item:focus-visible .menu__label-inner,
+  .menu__item.is-active .menu__label-inner {
+    color: var(--yellow);
+  }
+
+  .menu__item:hover .menu__arrow,
+  .menu__item:focus-visible .menu__arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+</style>

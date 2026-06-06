@@ -1,0 +1,23 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../../assets/lynncarre-logo.png';
+---
+
+<div class="signature">
+  <Image src={logo} alt="LynnCarré" width={900} class="signature__logo" />
+</div>
+
+<style>
+  .signature {
+    display: flex;
+    align-items: center;
+    margin-top: clamp(3rem, 9vh, 6rem);
+    padding-top: 1.4rem;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+    opacity: 0.55;
+  }
+  .signature__logo {
+    height: clamp(40px, 4.6vh, 60px);
+    width: auto;
+  }
+</style>

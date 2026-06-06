@@ -1,0 +1,20 @@
+---
+interface Props {
+  n: number;
+  tag: string;
+  bg: string;
+  fg: string;
+}
+
+const { n, tag, bg, fg } = Astro.props;
+const num = String(n).padStart(2, '0');
+---
+
+<section
+  data-frame
+  data-tag={tag}
+  data-steps="0"
+  class:list={['absolute inset-0 grid select-none place-items-center', bg, fg]}
+>
+  <span class="font-display leading-none text-[clamp(6rem,26vw,20rem)]">{num}</span>
+</section>

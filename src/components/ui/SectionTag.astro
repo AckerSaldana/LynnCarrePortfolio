@@ -1,0 +1,28 @@
+---
+interface Props {
+  initial?: string;
+}
+
+const { initial = '' } = Astro.props;
+---
+
+<div class="section-tag" aria-live="polite">
+  <span data-section-tag>{initial}</span>
+</div>
+
+<style>
+  .section-tag {
+    position: fixed;
+    top: var(--frame-pad);
+    left: var(--frame-pad);
+    z-index: 50;
+    pointer-events: none;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+</style>

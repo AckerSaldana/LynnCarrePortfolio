@@ -1,0 +1,45 @@
+---
+interface Props {
+  code?: string;
+  class?: string;
+}
+
+const { code = 'AC · 00 — 2026', class: className = '' } = Astro.props;
+const bars = [2, 1, 3, 1, 1, 2, 4, 1, 2, 1, 3, 2, 1, 1, 4, 1, 2, 3, 1, 2, 1, 3, 1, 1, 2, 2, 4, 1, 1, 2, 3, 1, 2, 1, 1, 3, 2, 1, 4, 1, 1, 2];
+---
+
+<div class:list={['barcode', className]} aria-hidden="true">
+  <div class="barcode__bars">
+    {bars.map((w) => <span style={`--w:${w}`}></span>)}
+  </div>
+  <span class="barcode__code">{code}</span>
+</div>
+
+<style>
+  .barcode {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--ink);
+  }
+
+  .barcode__bars {
+    display: flex;
+    align-items: stretch;
+    gap: 1px;
+    height: 34px;
+  }
+
+  .barcode__bars span {
+    width: calc(var(--w) * 1px);
+    background: currentColor;
+  }
+
+  .barcode__code {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+</style>

@@ -1,0 +1,11 @@
+:root {
+  --paper:  #F4F2ED;
+  --ink:    #111111;
+  --blue:   #1F3FB8;
+  --green:  #2E8B3D;
+  --yellow: #F2C200;
+  --red:    #E23B2E;
+
+  --grid-gutter: clamp(16px, 2vw, 32px);
+  --frame-pad:   clamp(24px, 4vw, 80px);
+}

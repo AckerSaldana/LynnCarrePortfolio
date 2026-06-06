@@ -1,0 +1,37 @@
+---
+interface Props {
+  current?: string;
+  total?: string;
+}
+
+const { current = '00', total = '00' } = Astro.props;
+---
+
+<div class="page-number">
+  <span data-page-current>{current}</span>
+  <span class="page-number__sep">/</span>
+  <span data-page-total>{total}</span>
+</div>
+
+<style>
+  .page-number {
+    position: fixed;
+    bottom: var(--frame-pad);
+    left: var(--frame-pad);
+    z-index: 50;
+    pointer-events: none;
+    display: flex;
+    gap: 0.5em;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    color: #fff;
+    mix-blend-mode: difference;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .page-number__sep {
+    opacity: 0.5;
+  }
+</style>

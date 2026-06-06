@@ -1,0 +1,120 @@
+---
+interface Segment {
+  t: string;
+  em?: 'steel' | 'bloom';
+}
+
+interface Props {
+  name: string;
+  location: string;
+  year: string;
+  manifesto: Segment[];
+}
+
+const { name, location, year, manifesto } = Astro.props;
+---
+
+<section data-frame data-tag="índice" data-steps="0" class="ix">
+  <div class="ix__inner">
+    <h2 class="ix__manifesto">{manifesto.map((s) =>
+      s.em === 'bloom' ? <em class="ix__em ix__em--bloom">{s.t}</em>
+      : s.em === 'steel' ? <em class="ix__em">{s.t}</em>
+      : s.t
+    )}</h2>
+
+    <div class="ix__meta">
+      <div class="ix__meta-group">
+        <span class="ix__meta-k">Diseñadora</span>
+        <span class="ix__meta-v">{name}</span>
+      </div>
+      <div class="ix__meta-group ix__meta-group--right">
+        <span class="ix__meta-k">Portafolio · {year}</span>
+        <span class="ix__meta-v">{location}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ix {
+    position: absolute;
+    inset: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .ix__inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: clamp(2rem, 5vh, 3.5rem);
+    padding: clamp(4rem, 11vh, 7.5rem) var(--frame-pad) clamp(2.4rem, 6vh, 4rem);
+    max-width: 1600px;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  /* la declaración: protagonista absoluta — escala acotada por ancho Y alto */
+  .ix__manifesto {
+    margin: 0;
+    align-self: flex-start;
+    max-width: 30ch;
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-size: clamp(2.6rem, min(9vw, 13vh), 10.5rem);
+  }
+  .ix__em { font-style: italic; }
+  .ix__em--bloom {
+    font-style: italic;
+    color: var(--blue);
+  }
+
+  /* máscara por línea (creada en runtime por SplitText): respiro lateral para que la
+     cursiva no se recorte; el negativo del margen mantiene la alineación a la izquierda */
+  .ix__manifesto :global(.ix__line-mask) {
+    display: block;
+    overflow: hidden;
+    padding: 0.06em 0.24em;
+    margin: 0 -0.24em;
+  }
+  .ix__manifesto :global(.ix__line) { display: block; }
+
+  /* pie editorial */
+  .ix__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 2rem;
+  }
+  .ix__meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .ix__meta-group--right { text-align: right; }
+  .ix__meta-k {
+    font-family: var(--font-body);
+    font-size: 0.64rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.5;
+  }
+  .ix__meta-v {
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+
+  @media (max-width: 820px) {
+    .ix__manifesto { max-width: 18ch; }
+    .ix__meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.2rem;
+    }
+    .ix__meta-group--right { text-align: left; }
+  }
+</style>

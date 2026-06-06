@@ -1,0 +1,213 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Barcode from '../ui/Barcode.astro';
+import Signature from '../ui/Signature.astro';
+
+interface Props {
+  slug: string;
+  title: string;
+  tag: string;
+  number: string;
+  body: string[];
+}
+
+const { slug, title, tag, number, body } = Astro.props;
+
+// foto suelta projects/<slug>.* — respaldo (también la usa el mosaico de la portada)
+const flat = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+let keyPhoto: ImageMetadata | undefined;
+for (const [path, img] of Object.entries(flat)) {
+  if ((path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase() === slug) keyPhoto = img;
+}
+
+// galería del detalle: fotos en src/assets/projects/<slug>/
+const galleryGlob = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/*/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const gallery = Object.entries(galleryGlob)
+  .filter(([path]) => (path.split('/projects/')[1] ?? '').startsWith(slug + '/'))
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([, img]) => img);
+
+const hero = gallery[0] ?? keyPhoto; // foto principal del detalle
+const rest = gallery.slice(1); // resto para la galería
+---
+
+<article
+  class="detail"
+  data-detail={slug}
+  role="dialog"
+  aria-modal="true"
+  aria-label={title}
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="detail__scroll" data-detail-scroll>
+    <header class="detail__bar">
+      <button type="button" class="detail__back" data-detail-close>
+        <span aria-hidden="true">←</span> Volver
+      </button>
+      <span class="detail__tag">{tag}</span>
+    </header>
+
+    {/* galería: fotos en src/assets/projects/<slug>/ (placeholder si la carpeta está vacía) */}
+    <div class="detail__gallery">
+      {rest.length > 0 ? (
+        rest.map((img) => (
+          <div class="detail__gcell">
+            <Image src={img} alt={title} widths={[500, 900]} sizes="45vw" class="detail__img" />
+          </div>
+        ))
+      ) : (
+        <>
+          <div class="detail__ph detail__ph--tall"></div>
+          <div class="detail__ph"></div>
+        </>
+      )}
+    </div>
+
+    <div class="detail__main">
+      <div class="detail__hero">
+        {hero ? (
+          <Image src={hero} alt={title} widths={[700, 1200]} sizes="(max-width: 820px) 90vw, 50vw" class="detail__img" />
+        ) : (
+          <div class="detail__ph"></div>
+        )}
+      </div>
+      <div class="detail__lede">
+        <h2 class="detail__title">{title}</h2>
+        {body.map((p) => <p class="detail__p">{p}</p>)}
+      </div>
+    </div>
+
+    <footer class="detail__foot">
+      <Barcode />
+      <span class="detail__num">{number}</span>
+    </footer>
+
+    <Signature />
+  </div>
+</article>
+
+<style>
+  .detail {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: var(--paper);
+    color: var(--ink);
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .detail__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    padding: var(--frame-pad);
+    box-sizing: border-box;
+  }
+  .detail__scroll::-webkit-scrollbar { display: none; }
+
+  .detail__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.74rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: clamp(2rem, 6vh, 4rem);
+  }
+  .detail__back {
+    display: inline-flex;
+    gap: 0.5em;
+    align-items: center;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+  }
+  .detail__back:hover { opacity: 0.6; }
+
+  .detail__gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: var(--grid-gutter);
+    margin-bottom: var(--grid-gutter);
+  }
+  .detail__gcell {
+    aspect-ratio: 4 / 3;
+    border-radius: 2px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--ink) 9%, var(--paper));
+  }
+  .detail__ph {
+    aspect-ratio: 4 / 3;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--ink) 9%, var(--paper));
+  }
+  .detail__ph--tall { aspect-ratio: 16 / 10; }
+
+  .detail__main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+    margin: clamp(2rem, 7vh, 5rem) 0;
+  }
+  .detail__hero {
+    border-radius: 2px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--ink) 9%, var(--paper));
+  }
+  .detail__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .detail__title {
+    margin: 0 0 1.5rem;
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.8rem, 7vw, 6rem);
+  }
+  .detail__p {
+    margin: 0 0 1.1rem;
+    max-width: 46ch;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.25vw, 1.2rem);
+    line-height: 1.65;
+  }
+
+  .detail__foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: clamp(2rem, 6vh, 4rem);
+  }
+  .detail__num {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 3rem);
+  }
+
+  @media (max-width: 820px) {
+    .detail__gallery { grid-template-columns: 1fr; }
+    .detail__main { grid-template-columns: 1fr; }
+  }
+</style>

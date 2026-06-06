@@ -1,0 +1,361 @@
+---
+import Base from '../layouts/Base.astro';
+import CoverFrame from '../components/frames/CoverFrame.astro';
+import ProjectFrame from '../components/frames/ProjectFrame.astro';
+import ProjectDetail from '../components/frames/ProjectDetail.astro';
+import BouquetDetail from '../components/frames/BouquetDetail.astro';
+import IndexFrame from '../components/frames/IndexFrame.astro';
+import SectionTag from '../components/ui/SectionTag.astro';
+import MenuTrigger from '../components/ui/MenuTrigger.astro';
+import Menu from '../components/ui/Menu.astro';
+
+// Proyectos (orden = frames 2,3,4...). El copy de Bouquet es del portafolio; el resto, de ejemplo.
+const projects = [
+  {
+    slug: 'bouquet',
+    title: 'Bouquet',
+    tag: 'diseño industrial',
+    number: '02',
+    body: [
+      'Bouquet es un florero inspirado en la forma de un ramo de flores. El concepto surge de la complicada acción de cambiar el agua de un florero durante el paso de los días.',
+      'Consta de dos partes removibles que pueden ser separadas para cambiar el agua con facilidad. Mientras que la parte superior puede ser puesta sobre la mesa a la vez que sostiene cuidadosamente las flores, la parte inferior es llenada con agua para mantener las flores con vida.',
+      'Elaborado en lámina de acero y decorado en colores primarios. El azul representa el papel usado para envolver los ramos de flores, mientras que el verde representa los tallos de las mismas.',
+    ],
+  },
+  {
+    slug: 'biznaga',
+    title: 'Biznaga',
+    tag: 'diseño industrial',
+    number: '03',
+    body: ['— descripción de ejemplo — reemplazar con el texto del portafolio de Biznaga.'],
+  },
+  {
+    slug: 'daylights',
+    title: 'Daylights',
+    tag: 'diseño industrial',
+    number: '04',
+    body: ['— descripción de ejemplo — reemplazar con el texto del portafolio de Daylights.'],
+  },
+];
+
+// Perfil: el índice (frame 1) lo usa de manifiesto. Email/teléfono quedan para el colofón.
+const profile = {
+  name: 'Aylinn Carré',
+  location: 'Monterrey, MX',
+  email: 'aylinniglerre@gmail.com',
+  phone: '232 379 64 17',
+};
+
+// manifiesto art-directado: segmentos con énfasis tipográfico
+const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
+  { t: 'Diseñadora apasionada del ' },
+  { t: 'arte', em: 'steel' },
+  { t: ' y las ' },
+  { t: 'industrias creativas', em: 'bloom' },
+  { t: '.' },
+];
+
+const sections = [
+  { label: 'Portada', target: 0 },
+  { label: 'Índice', target: 1 },
+  { label: 'Proyectos', target: 2 }, // una sola sección; abarca todos los frames de proyecto (2+)
+];
+---
+
+<Base>
+  <canvas data-scene class="fixed inset-0 z-0 pointer-events-none"></canvas>
+
+  <div data-frames class="fixed inset-0 z-10 overflow-hidden">
+    <CoverFrame />
+    <IndexFrame
+      name={profile.name}
+      location={profile.location}
+      year="2026"
+      manifesto={manifesto}
+    />
+    {projects.map((p) => <ProjectFrame title={p.title} tag={p.tag} model={p.slug} />)}
+  </div>
+
+  <BouquetDetail />
+  {projects.filter((p) => p.slug !== 'bouquet').map((p) => <ProjectDetail slug={p.slug} title={p.title} tag={p.tag} number={p.number} body={p.body} />)}
+
+  <div class="cursor-img" data-cursor-img aria-hidden="true"><img alt="" decoding="async" /></div>
+
+  <SectionTag initial="portada" />
+  <MenuTrigger />
+  <Menu items={sections} />
+</Base>
+
+<style>
+  .cursor-img {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    width: clamp(190px, 18vw, 340px);
+    aspect-ratio: 3 / 4;
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform;
+  }
+  .cursor-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+</style>
+
+<script>
+  import { gsap, SplitText } from '../lib/gsap';
+  import { createFrameNavigator, type FrameRef } from '../lib/observer';
+  import { createMenu } from '../lib/menu';
+  import { createScene } from '../lib/three/scene';
+  import { loadModel, hasModel, getModelTilt } from '../lib/three/models';
+  import { Group } from 'three';
+
+  const stack = document.querySelector<HTMLElement>('[data-frames]');
+  if (stack) {
+    const els = [...stack.querySelectorAll<HTMLElement>('[data-frame]')];
+    // Navegación directa (un notch = siguiente frame); sin sub-pasos de rotación.
+    const frames: FrameRef[] = els.map((el) => ({ el, steps: Number(el.dataset.steps ?? 0) }));
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // estado inicial: solo el primer frame visible
+    gsap.set(els, { autoAlpha: 0 });
+    gsap.set(els[0], { autoAlpha: 1 });
+
+    // --- reveal del manifiesto (índice): líneas que suben tras una máscara ---
+    const ixSection = els.find((el) => el.classList.contains('ix')) ?? null;
+    const ixIndex = ixSection ? els.indexOf(ixSection) : -1;
+    let ixSplit: SplitText | null = null;
+    let ixReveal: ReturnType<typeof gsap.timeline> | null = null;
+    function buildIxReveal() {
+      if (!ixSection || reduced) return;
+      const manifesto = ixSection.querySelector<HTMLElement>('.ix__manifesto');
+      if (!manifesto) return;
+      ixSplit?.revert();
+      ixSplit = new SplitText(manifesto, { type: 'lines', linesClass: 'ix__line' });
+      // máscara propia por línea (con respiro lateral via CSS para no recortar la cursiva)
+      ixSplit.lines.forEach((line) => {
+        const wrap = document.createElement('span');
+        wrap.className = 'ix__line-mask';
+        line.parentNode?.insertBefore(wrap, line);
+        wrap.appendChild(line);
+      });
+      ixReveal?.kill();
+      ixReveal = gsap
+        .timeline({ paused: true })
+        .from(ixSplit.lines, { yPercent: 120, duration: 1.1, ease: 'power4.out', stagger: 0.1 })
+        .from(
+          [...ixSection.querySelectorAll('.ix__meta')],
+          { autoAlpha: 0, y: 18, duration: 0.7, ease: 'power3.out' },
+          0.3,
+        );
+    }
+    if (!reduced) {
+      if (document.fonts?.ready) document.fonts.ready.then(buildIxReveal);
+      else buildIxReveal();
+      let ixResizeT = 0;
+      window.addEventListener('resize', () => {
+        window.clearTimeout(ixResizeT);
+        ixResizeT = window.setTimeout(buildIxReveal, 200);
+      });
+    }
+
+    // --- escena 3D persistente: carrusel de objetos por proyecto ---
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-scene]');
+    const sceneHandle = canvas ? createScene(canvas) : null;
+    // cada modelo vive en un pivot: el modelo gira solo en Y, el pivot hace el swap (sin chocar)
+    const mounted = new Map<string, Group>();
+    let sceneIndex = 0;
+
+    const exitDist = (pivot: Group) => ((pivot.userData.span as number | undefined) ?? 2) * 2.2;
+
+    function rest(pivot: Group) {
+      pivot.position.set(0, 0, 0);
+      pivot.scale.setScalar(1);
+      pivot.rotation.z = 0;
+    }
+
+    async function ensureModel(name: string) {
+      if (mounted.has(name)) return mounted.get(name) ?? null;
+      const p = loadModel(name);
+      if (!p) return null;
+      const model = await p;
+      if (sceneHandle && !mounted.has(name)) {
+        const pivot = new Group();
+        pivot.add(model);
+        sceneHandle.add(pivot);
+        sceneHandle.frameObject(model); // centra el modelo dentro del pivot + acomoda cámara
+        pivot.userData.span = (model.userData.span as number | undefined) ?? 2;
+        pivot.rotation.x = getModelTilt(name); // inclina el pivot (eje de giro) para asomar la parte superior
+        pivot.visible = false;
+        // animación propia: giro lento continuo en Y, independiente del swap del pivot
+        if (!reduced) gsap.to(model.rotation, { y: '+=' + Math.PI * 2, duration: 32, ease: 'none', repeat: -1 });
+        mounted.set(name, pivot);
+      }
+      return mounted.get(name) ?? null;
+    }
+
+    // reposo de la escena tras cada cambio de frame
+    function updateScene(index: number) {
+      if (!sceneHandle) return;
+      sceneIndex = index;
+      const activeModel = els[index]?.dataset.model;
+      // carga perezosa: trae los modelos a un frame de distancia del actual
+      [index - 1, index, index + 1].forEach((j) => {
+        const m = els[j]?.dataset.model;
+        if (hasModel(m)) ensureModel(m);
+      });
+      mounted.forEach((pivot, name) => {
+        pivot.visible = name === activeModel;
+        rest(pivot);
+      });
+      sceneHandle.setActive(hasModel(activeModel));
+      if (hasModel(activeModel)) {
+        ensureModel(activeModel).then((pivot) => {
+          if (!pivot || sceneIndex !== index) return;
+          rest(pivot);
+          pivot.visible = true;
+        });
+      }
+    }
+
+    // Swap secuenciado: el saliente vuela fuera (se inclina y encoge) y, ya despejado,
+    // el entrante llega del lado opuesto asentando con un leve rebote. El texto va con el slide.
+    function transition(from: HTMLElement, to: HTMLElement, dir: 1 | -1) {
+      const tl = gsap.timeline();
+      const fromPivot = from.dataset.model ? mounted.get(from.dataset.model) : undefined;
+      const toPivot = to.dataset.model ? mounted.get(to.dataset.model) : undefined;
+      if (sceneHandle && (fromPivot || toPivot)) sceneHandle.setActive(true);
+
+      if (reduced) {
+        gsap.set(to, { yPercent: 0, autoAlpha: 0 });
+        tl.to(from, { autoAlpha: 0, duration: 0.25 }, 0)
+          .to(to, { autoAlpha: 1, duration: 0.25 }, 0)
+          .set(from, { autoAlpha: 0 });
+        if (fromPivot) tl.set(fromPivot, { visible: false }, 0);
+        if (toPivot) {
+          rest(toPivot);
+          tl.set(toPivot, { visible: true }, 0);
+        }
+        return tl;
+      }
+
+      // texto / frame editorial: sale primero, entra después (en sincronía con los objetos)
+      gsap.set(to, { yPercent: 100 * dir, autoAlpha: 1 });
+      tl.to(from, { yPercent: -100 * dir, duration: 0.6, ease: 'power2.in' }, 0)
+        .set(from, { autoAlpha: 0, yPercent: 0 }, 0.6)
+        .to(to, { yPercent: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
+
+      // objeto saliente: ease-in-out al volar fuera de cuadro, inclinándose y encogiéndose
+      if (fromPivot) {
+        const exit = exitDist(fromPivot);
+        tl.to(fromPivot.position, { y: exit * dir, duration: 0.6, ease: 'power4.inOut' }, 0)
+          .to(fromPivot.scale, { x: 0.82, y: 0.82, z: 0.82, duration: 0.6, ease: 'power4.inOut' }, 0)
+          .to(fromPivot.rotation, { z: 0.28 * dir, duration: 0.6, ease: 'power4.inOut' }, 0);
+      }
+      // objeto entrante: ya despejado el anterior, llega del lado opuesto y desacelera fuerte al asentar
+      if (toPivot) {
+        const exit = exitDist(toPivot);
+        toPivot.visible = true;
+        gsap.set(toPivot.position, { x: 0, y: -exit * dir, z: 0 });
+        gsap.set(toPivot.scale, { x: 0.82, y: 0.82, z: 0.82 });
+        gsap.set(toPivot.rotation, { z: -0.28 * dir });
+        tl.to(toPivot.position, { y: 0, duration: 1.05, ease: 'power4.inOut' }, 0.55)
+          .to(toPivot.scale, { x: 1, y: 1, z: 1, duration: 1.05, ease: 'power4.inOut' }, 0.55)
+          .to(toPivot.rotation, { z: 0, duration: 1.05, ease: 'power4.inOut' }, 0.55);
+      }
+      return tl;
+    }
+
+    const tagEl = document.querySelector<HTMLElement>('[data-section-tag]');
+
+    function paintMeta(text: string, el: HTMLElement | null) {
+      if (!el) return;
+      el.textContent = text;
+      if (!reduced) {
+        gsap.fromTo(el, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+      }
+    }
+
+    const nav = createFrameNavigator({
+      frames,
+      transition,
+      onChange: (index) => {
+        paintMeta(els[index].dataset.tag ?? '', tagEl);
+        updateScene(index);
+        if (index === ixIndex) ixReveal?.restart();
+      },
+    });
+
+    let detailOpen = false;
+
+    createMenu({
+      reducedMotion: reduced,
+      getActive: () => nav.index,
+      onOpen: () => nav.disable(),
+      onClose: () => nav.enable(),
+      onNavigate: (target) => nav.goTo(target),
+    });
+
+    // --- imagen que sigue al cursor al pasar por el título de un proyecto ---
+    const cursorImg = document.querySelector<HTMLElement>('[data-cursor-img]');
+    const cursorImgEl = cursorImg?.querySelector('img') ?? null;
+    if (cursorImg && !reduced) {
+      gsap.set(cursorImg, { xPercent: -50, yPercent: -50, scale: 0.6 });
+      const qx = gsap.quickTo(cursorImg, 'x', { duration: 0.5, ease: 'power3' });
+      const qy = gsap.quickTo(cursorImg, 'y', { duration: 0.5, ease: 'power3' });
+      window.addEventListener('pointermove', (e) => { qx(e.clientX); qy(e.clientY); });
+    }
+    function showCursorImg(src?: string) {
+      if (!cursorImg || !cursorImgEl || reduced) return;
+      if (src) cursorImgEl.src = src;
+      gsap.to(cursorImg, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'power3.out' });
+    }
+    function hideCursorImg() {
+      if (!cursorImg) return;
+      gsap.to(cursorImg, { autoAlpha: 0, scale: 0.6, duration: 0.3, ease: 'power3.out' });
+    }
+
+    // --- vista detallada editorial (overlay por proyecto) ---
+    function openDetail(slug?: string) {
+      if (!slug || detailOpen) return;
+      const el = document.querySelector<HTMLElement>(`[data-detail="${slug}"]`);
+      if (!el) return;
+      detailOpen = true;
+      hideCursorImg();
+      nav.disable();
+      const sc = el.querySelector<HTMLElement>('[data-detail-scroll]');
+      if (sc) sc.scrollTop = 0;
+      el.setAttribute('aria-hidden', 'false');
+      gsap.fromTo(el, { autoAlpha: 0, y: reduced ? 0 : 24 }, { autoAlpha: 1, y: 0, duration: reduced ? 0.2 : 0.6, ease: 'power3.out' });
+      el.focus();
+    }
+    function closeDetail() {
+      const el = document.querySelector<HTMLElement>('[data-detail][aria-hidden="false"]');
+      if (!el) return;
+      detailOpen = false;
+      gsap.to(el, {
+        autoAlpha: 0,
+        duration: reduced ? 0.15 : 0.4,
+        ease: 'power3.in',
+        onComplete: () => el.setAttribute('aria-hidden', 'true'),
+      });
+      nav.enable();
+    }
+
+    // títulos de proyecto: hover muestra la imagen, click abre el detalle
+    [...document.querySelectorAll<HTMLElement>('[data-project]')].forEach((t) => {
+      t.addEventListener('mouseenter', () => showCursorImg(t.dataset.photo));
+      t.addEventListener('mouseleave', hideCursorImg);
+      t.addEventListener('click', () => openDetail(t.dataset.project));
+    });
+    document.querySelectorAll<HTMLElement>('[data-detail-close]').forEach((b) => b.addEventListener('click', closeDetail));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && detailOpen) closeDetail(); });
+  }
+</script>

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* `inline` porque el valor es un var(): emite la referencia directa en vez de
+   congelar el valor, así un override scoped de --paper sigue funcionando. */
+@theme inline {
+  --color-paper:  var(--paper);
+  --color-ink:    var(--ink);
+  --color-blue:   var(--blue);
+  --color-green:  var(--green);
+  --color-yellow: var(--yellow);
+  --color-red:    var(--red);
+
+  --font-display: var(--font-dm-serif);
+  --font-body:    var(--font-open-sauce);
+}
+
+@layer base {
+  html {
+    background-color: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-body);
+    overflow: hidden; /* el eje principal lo maneja Observer, no el scroll nativo */
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
