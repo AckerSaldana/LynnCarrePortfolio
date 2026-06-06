@@ -1,4 +1,5 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import type { Object3D } from "three";
 import bouquetUrl from "../../assets/models/bouquet.glb?url";
 import biznagaUrl from "../../assets/models/biznaga.glb?url";
@@ -39,7 +40,7 @@ export function loadModel(name: string): Promise<Object3D> | null {
   const cached = cache.get(name);
   if (cached) return cached;
 
-  loader ??= new GLTFLoader();
+  loader ??= new GLTFLoader().setMeshoptDecoder(MeshoptDecoder); // .glb comprimidos con EXT_meshopt_compression
   const promise = loader.loadAsync(cfg.url).then((gltf) => {
     const obj = gltf.scene;
     if (cfg.rotation) obj.rotation.set(cfg.rotation[0], cfg.rotation[1], cfg.rotation[2]);

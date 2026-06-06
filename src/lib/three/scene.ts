@@ -40,16 +40,13 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   rim.position.set(-3, 1.5, -2.5);
   scene.add(rim);
 
-  // Encuadre: el modelo se coloca a la izquierda en pantallas anchas (la derecha queda
-  // para el título), y centrado en móvil. Se recalcula en resize.
+  // Encuadre: el modelo va centrado (el nombre gigante pasa por delante, en z-10).
+  // Se recalcula en resize.
   let frameDist = 0;
   function applyView() {
     if (!frameDist) return;
-    const ndcX = window.innerWidth > 820 ? -0.42 : 0;
-    const halfW = frameDist * Math.tan((Math.PI * camera.fov) / 360) * camera.aspect;
-    const cx = -ndcX * halfW;
-    camera.position.set(cx, 0, frameDist);
-    camera.lookAt(cx, 0, 0);
+    camera.position.set(0, 0, frameDist);
+    camera.lookAt(0, 0, 0);
   }
 
   const render = () => renderer.render(scene, camera);

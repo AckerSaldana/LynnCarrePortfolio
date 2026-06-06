@@ -46,25 +46,22 @@ const { name, location, year, manifesto } = Astro.props;
     position: absolute;
     inset: 0;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: clamp(2rem, 5vh, 3.5rem);
-    padding: clamp(4rem, 11vh, 7.5rem) var(--frame-pad) clamp(2.4rem, 6vh, 4rem);
-    max-width: 1600px;
-    margin-inline: auto;
+    align-items: center;
+    justify-content: center;
+    padding: var(--frame-pad);
     box-sizing: border-box;
   }
 
-  /* la declaración: protagonista absoluta — escala acotada por ancho Y alto */
+  /* la declaración: protagonista centrada, acotada por ancho Y alto */
   .ix__manifesto {
     margin: 0;
-    align-self: flex-start;
-    max-width: 30ch;
+    max-width: 22ch;
+    text-align: center;
     font-family: var(--font-display);
     font-weight: 400;
-    line-height: 1;
+    line-height: 1.04;
     letter-spacing: -0.02em;
-    font-size: clamp(2.6rem, min(9vw, 13vh), 10.5rem);
+    font-size: clamp(2.6rem, min(8.5vw, 12vh), 9.5rem);
   }
   .ix__em { font-style: italic; }
   .ix__em--bloom {
@@ -82,8 +79,12 @@ const { name, location, year, manifesto } = Astro.props;
   }
   .ix__manifesto :global(.ix__line) { display: block; }
 
-  /* pie editorial */
+  /* pie editorial: footer fijo al fondo del frame */
   .ix__meta {
+    position: absolute;
+    left: var(--frame-pad);
+    right: var(--frame-pad);
+    bottom: clamp(2.4rem, 6vh, 4rem);
     display: flex;
     justify-content: space-between;
     align-items: flex-end;

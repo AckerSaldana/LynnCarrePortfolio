@@ -1,13 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
-import CoverFrame from '../components/frames/CoverFrame.astro';
+import HeroFrame from '../components/frames/HeroFrame.astro';
 import ProjectFrame from '../components/frames/ProjectFrame.astro';
 import ProjectDetail from '../components/frames/ProjectDetail.astro';
 import BouquetDetail from '../components/frames/BouquetDetail.astro';
 import IndexFrame from '../components/frames/IndexFrame.astro';
-import SectionTag from '../components/ui/SectionTag.astro';
-import MenuTrigger from '../components/ui/MenuTrigger.astro';
-import Menu from '../components/ui/Menu.astro';
+import VisualIndex from '../components/frames/VisualIndex.astro';
+import Header from '../components/ui/Header.astro';
 
 // Proyectos (orden = frames 2,3,4...). El copy de Bouquet es del portafolio; el resto, de ejemplo.
 const projects = [
@@ -46,6 +45,20 @@ const profile = {
   phone: '232 379 64 17',
 };
 
+// Diseño visual (identidad): índice de la sección "visual". Orden = fila en el índice.
+const visualProjects = [
+  { slug: 'salmon', title: 'Salmón' },
+  { slug: 'tito', title: 'Tito' },
+  { slug: 'occidental', title: 'Occidental' },
+  { slug: 'expo-ingenierias', title: 'Expo Ingenierías' },
+  { slug: 'betterware', title: 'Betterware' },
+  { slug: 'cocina-habibi', title: 'Cocina Habibi' },
+  { slug: 'decadas', title: 'Décadas' },
+  { slug: 'ellassueñan', title: 'Ellas Sueñan' },
+  { slug: 'manualeic', title: 'Manual EIC' },
+  { slug: 'sacbe', title: 'Sacbé' },
+];
+
 // manifiesto art-directado: segmentos con énfasis tipográfico
 const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
   { t: 'Diseñadora apasionada del ' },
@@ -55,18 +68,13 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
   { t: '.' },
 ];
 
-const sections = [
-  { label: 'Portada', target: 0 },
-  { label: 'Índice', target: 1 },
-  { label: 'Proyectos', target: 2 }, // una sola sección; abarca todos los frames de proyecto (2+)
-];
 ---
 
 <Base>
   <canvas data-scene class="fixed inset-0 z-0 pointer-events-none"></canvas>
 
   <div data-frames class="fixed inset-0 z-10 overflow-hidden">
-    <CoverFrame />
+    <HeroFrame />
     <IndexFrame
       name={profile.name}
       location={profile.location}
@@ -74,6 +82,7 @@ const sections = [
       manifesto={manifesto}
     />
     {projects.map((p) => <ProjectFrame title={p.title} tag={p.tag} model={p.slug} />)}
+    <VisualIndex projects={visualProjects} />
   </div>
 
   <BouquetDetail />
@@ -81,9 +90,7 @@ const sections = [
 
   <div class="cursor-img" data-cursor-img aria-hidden="true"><img alt="" decoding="async" /></div>
 
-  <SectionTag initial="portada" />
-  <MenuTrigger />
-  <Menu items={sections} />
+  <Header />
 </Base>
 
 <style>
@@ -111,7 +118,6 @@ const sections = [
 <script>
   import { gsap, SplitText } from '../lib/gsap';
   import { createFrameNavigator, type FrameRef } from '../lib/observer';
-  import { createMenu } from '../lib/menu';
   import { createScene } from '../lib/three/scene';
   import { loadModel, hasModel, getModelTilt } from '../lib/three/models';
   import { Group } from 'three';
@@ -133,6 +139,7 @@ const sections = [
     const ixIndex = ixSection ? els.indexOf(ixSection) : -1;
     let ixSplit: SplitText | null = null;
     let ixReveal: ReturnType<typeof gsap.timeline> | null = null;
+    let ixRevealed = false; // el reveal del índice corre una sola vez; reentradas lo dejan completo
     function buildIxReveal() {
       if (!ixSection || reduced) return;
       const manifesto = ixSection.querySelector<HTMLElement>('.ix__manifesto');
@@ -155,6 +162,7 @@ const sections = [
           { autoAlpha: 0, y: 18, duration: 0.7, ease: 'power3.out' },
           0.3,
         );
+      if (ixRevealed) ixReveal.progress(1); // ya se mostró (p.ej. tras resize): déjalo completo
     }
     if (!reduced) {
       if (document.fonts?.ready) document.fonts.ready.then(buildIxReveal);
@@ -219,15 +227,25 @@ const sections = [
       if (hasModel(activeModel)) {
         ensureModel(activeModel).then((pivot) => {
           if (!pivot || sceneIndex !== index) return;
-          rest(pivot);
-          pivot.visible = true;
+          // si el modelo cargó DESPUÉS de la transición, deslízalo (no lo muestres estático)
+          if (!pivot.visible && !reduced) {
+            rest(pivot);
+            const enter = exitDist(pivot);
+            gsap.set(pivot.position, { x: 0, y: -enter, z: 0 });
+            pivot.visible = true;
+            gsap.to(pivot.position, { y: 0, duration: 0.85, ease: 'power3.out' });
+          } else {
+            rest(pivot);
+            pivot.visible = true;
+          }
         });
       }
     }
 
-    // Swap secuenciado: el saliente vuela fuera (se inclina y encoge) y, ya despejado,
-    // el entrante llega del lado opuesto asentando con un leve rebote. El texto va con el slide.
+    // Swap: objeto y texto se mueven como una sola pieza — el saliente se desliza fuera con el
+    // mismo gesto del texto, y el entrante entra del mismo lado con idéntico ease/duración/tiempo.
     function transition(from: HTMLElement, to: HTMLElement, dir: 1 | -1) {
+      hideCursorImg(); // si saliste de un frame con preview sin que dispare mouseleave, límpiala
       const tl = gsap.timeline();
       const fromPivot = from.dataset.model ? mounted.get(from.dataset.model) : undefined;
       const toPivot = to.dataset.model ? mounted.get(to.dataset.model) : undefined;
@@ -252,55 +270,46 @@ const sections = [
         .set(from, { autoAlpha: 0, yPercent: 0 }, 0.6)
         .to(to, { yPercent: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
 
-      // objeto saliente: ease-in-out al volar fuera de cuadro, inclinándose y encogiéndose
+      // objeto saliente: se va con el MISMO gesto que el texto (mismo lado, ease y tiempo)
       if (fromPivot) {
+        rest(fromPivot);
         const exit = exitDist(fromPivot);
-        tl.to(fromPivot.position, { y: exit * dir, duration: 0.6, ease: 'power4.inOut' }, 0)
-          .to(fromPivot.scale, { x: 0.82, y: 0.82, z: 0.82, duration: 0.6, ease: 'power4.inOut' }, 0)
-          .to(fromPivot.rotation, { z: 0.28 * dir, duration: 0.6, ease: 'power4.inOut' }, 0);
+        tl.to(fromPivot.position, { y: exit * dir, duration: 0.6, ease: 'power2.in' }, 0)
+          .set(fromPivot, { visible: false }, 0.6);
       }
-      // objeto entrante: ya despejado el anterior, llega del lado opuesto y desacelera fuerte al asentar
+      // objeto entrante: entra como el texto — fuera de cuadro del mismo lado y se desliza
+      // a reposo con idéntico ease/duración/tiempo. Nunca se ve estático "apareciendo".
       if (toPivot) {
-        const exit = exitDist(toPivot);
+        rest(toPivot);
+        const enter = exitDist(toPivot);
+        gsap.set(toPivot.position, { x: 0, y: -enter * dir, z: 0 });
         toPivot.visible = true;
-        gsap.set(toPivot.position, { x: 0, y: -exit * dir, z: 0 });
-        gsap.set(toPivot.scale, { x: 0.82, y: 0.82, z: 0.82 });
-        gsap.set(toPivot.rotation, { z: -0.28 * dir });
-        tl.to(toPivot.position, { y: 0, duration: 1.05, ease: 'power4.inOut' }, 0.55)
-          .to(toPivot.scale, { x: 1, y: 1, z: 1, duration: 1.05, ease: 'power4.inOut' }, 0.55)
-          .to(toPivot.rotation, { z: 0, duration: 1.05, ease: 'power4.inOut' }, 0.55);
+        tl.to(toPivot.position, { y: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
       }
       return tl;
-    }
-
-    const tagEl = document.querySelector<HTMLElement>('[data-section-tag]');
-
-    function paintMeta(text: string, el: HTMLElement | null) {
-      if (!el) return;
-      el.textContent = text;
-      if (!reduced) {
-        gsap.fromTo(el, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out' });
-      }
     }
 
     const nav = createFrameNavigator({
       frames,
       transition,
       onChange: (index) => {
-        paintMeta(els[index].dataset.tag ?? '', tagEl);
         updateScene(index);
-        if (index === ixIndex) ixReveal?.restart();
+        if (index === ixIndex && !ixRevealed) {
+          ixRevealed = true;
+          ixReveal?.restart();
+        }
       },
     });
 
     let detailOpen = false;
 
-    createMenu({
-      reducedMotion: reduced,
-      getActive: () => nav.index,
-      onOpen: () => nav.disable(),
-      onClose: () => nav.enable(),
-      onNavigate: (target) => nav.goTo(target),
+    // Header + categorías del hero: cada control con data-nav-target salta a su frame.
+    document.querySelectorAll<HTMLElement>('[data-nav-target]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const t = el.dataset.navTarget;
+        if (!t) return; // stub: sección por construir
+        nav.goTo(Number(t));
+      });
     });
 
     // --- imagen que sigue al cursor al pasar por el título de un proyecto ---
@@ -311,6 +320,9 @@ const sections = [
       const qx = gsap.quickTo(cursorImg, 'x', { duration: 0.5, ease: 'power3' });
       const qy = gsap.quickTo(cursorImg, 'y', { duration: 0.5, ease: 'power3' });
       window.addEventListener('pointermove', (e) => { qx(e.clientX); qy(e.clientY); });
+      // red de seguridad: si el puntero sale de la ventana o pierde foco, limpia el preview
+      document.addEventListener('pointerleave', () => hideCursorImg());
+      window.addEventListener('blur', () => hideCursorImg());
     }
     function showCursorImg(src?: string) {
       if (!cursorImg || !cursorImgEl || reduced) return;
@@ -351,8 +363,10 @@ const sections = [
 
     // títulos de proyecto: hover muestra la imagen, click abre el detalle
     [...document.querySelectorAll<HTMLElement>('[data-project]')].forEach((t) => {
-      t.addEventListener('mouseenter', () => showCursorImg(t.dataset.photo));
-      t.addEventListener('mouseleave', hideCursorImg);
+      if (t.dataset.photo) {
+        t.addEventListener('mouseenter', () => showCursorImg(t.dataset.photo));
+        t.addEventListener('mouseleave', hideCursorImg);
+      }
       t.addEventListener('click', () => openDetail(t.dataset.project));
     });
     document.querySelectorAll<HTMLElement>('[data-detail-close]').forEach((b) => b.addEventListener('click', closeDetail));

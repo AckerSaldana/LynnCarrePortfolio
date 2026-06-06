@@ -1,0 +1,153 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface VisualProject { slug: string; title: string; }
+interface Props { projects: VisualProject[] }
+
+const { projects } = Astro.props;
+
+// foto por proyecto (mismo slug) → thumb para la imagen que sigue al cursor en hover
+const images = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+function findImage(slug: string): ImageMetadata | undefined {
+  for (const [path, img] of Object.entries(images)) {
+    if ((path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase() === slug) return img;
+  }
+  return undefined;
+}
+const rows = await Promise.all(
+  projects.map(async (p, i) => {
+    const img = findImage(p.slug);
+    const thumb = img ? (await getImage({ src: img, width: 640, format: 'webp' })).src : undefined;
+    return { ...p, n: String(i + 1).padStart(2, '0'), thumb };
+  }),
+);
+---
+
+<section data-frame data-visual-index data-tag="diseño visual" data-steps="0" class="vix">
+  <div class="vix__head">
+    <span class="vix__label">Diseño visual</span>
+    <span class="vix__count">{rows.length} proyectos</span>
+  </div>
+
+  <ul class="vix__list">
+    {rows.map((r) => (
+      <li class="vix__row">
+        <button type="button" class="vix__item" data-project={r.slug} data-photo={r.thumb} data-visual>
+          <span class="vix__n">{r.n}</span>
+          <span class="vix__name">{r.title}</span>
+          <span class="vix__arrow" aria-hidden="true">↗</span>
+        </button>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .vix {
+    position: absolute;
+    inset: 0;
+    background: var(--paper);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    padding: clamp(5rem, 13vh, 8.5rem) var(--frame-pad) clamp(1.6rem, 4vh, 3rem);
+    box-sizing: border-box;
+  }
+
+  .vix__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: clamp(0.8rem, 2vh, 1.6rem);
+    font-family: var(--font-body);
+    font-size: 0.66rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .vix__count { opacity: 0.45; }
+
+  .vix__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .vix__row {
+    flex: 1;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+  .vix__row:last-child {
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+
+  .vix__item {
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.4rem);
+    padding: 0 0.2rem;
+    color: var(--ink);
+    text-align: left;
+  }
+
+  .vix__n {
+    font-family: var(--font-body);
+    font-size: clamp(0.7rem, 1vw, 0.86rem);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    opacity: 0.4;
+    width: 2.4ch;
+    flex-shrink: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .vix__name {
+    flex: 1;
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    font-size: clamp(1.5rem, 4.6vh, 3.4rem);
+    transform: translateX(0);
+    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0, 1), color 0.3s ease;
+  }
+
+  .vix__arrow {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.6vw, 1.5rem);
+    opacity: 0;
+    transform: translate(-8px, 0);
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.7, 0, 1);
+  }
+
+  /* hover: el nombre se desplaza y pinta de azul, asoma la flecha, el número se aviva */
+  .vix__item:hover .vix__name,
+  .vix__item:focus-visible .vix__name {
+    transform: translateX(clamp(0.6rem, 1.4vw, 1.4rem));
+    color: var(--blue);
+  }
+  .vix__item:hover .vix__arrow,
+  .vix__item:focus-visible .vix__arrow {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+  .vix__item:hover .vix__n,
+  .vix__item:focus-visible .vix__n { opacity: 0.8; }
+
+  @media (max-width: 820px) {
+    .vix__name { font-size: clamp(1.3rem, 3.6vh, 2.4rem); }
+    .vix__head { font-size: 0.58rem; }
+  }
+</style>

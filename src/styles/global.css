@@ -11,8 +11,11 @@
   --color-yellow: var(--yellow);
   --color-red:    var(--red);
 
-  --font-display: var(--font-dm-serif);
-  --font-body:    var(--font-open-sauce);
+  /* Clother (Typekit) para cuerpo y titulares; "comba" (Typekit) para el wordmark.
+     Clother trae pesos 400 y 700 — los textos protagonistas van en bold (700). */
+  --font-display: "clother", "Avenir Next", "Futura", "Century Gothic", system-ui, sans-serif;
+  --font-body:    "clother", "Avenir Next", "Futura", "Century Gothic", system-ui, sans-serif;
+  --font-logo:    "comba", "Avenir Next", "Futura", system-ui, sans-serif;
 }
 
 @layer base {

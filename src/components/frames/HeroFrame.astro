@@ -1,0 +1,172 @@
+---
+import { Image } from 'astro:assets';
+import productoImg from '../../assets/projects/bouquet/2.png';
+import visualImg from '../../assets/projects/tito.png';
+
+// Frame 0 del stack. Contrato del Observer: data-frame + data-steps="0".
+// Dos categorías de entrada: producto (diseño industrial) y visual (diseño visual).
+// data-nav-target = índice del frame destino; vacío = stub (sección por construir).
+---
+
+<section data-frame data-hero data-tag="portada" data-steps="0" class="hero">
+  <div class="hero__stage" data-hero-stage>
+    <span class="hero__rect hero__rect--a" data-parallax data-depth="0.5" data-cat="producto" data-nav-target="2" aria-hidden="true">
+      <Image class="hero__rect-img" src={productoImg} alt="" widths={[480, 768, 1024]} sizes="42vw" />
+    </span>
+    <span class="hero__rect hero__rect--b" data-parallax data-depth="0.8" data-cat="visual" data-nav-target="5" aria-hidden="true">
+      <Image class="hero__rect-img" src={visualImg} alt="" widths={[480, 768, 1024]} sizes="42vw" />
+    </span>
+
+    <button
+      class="hero__word hero__word--producto"
+      type="button"
+      data-cat="producto"
+      data-nav-target="2"
+      data-parallax
+      data-depth="1"
+      aria-label="Ver proyectos de producto"
+    ><span class="hero__word-inner">producto</span></button>
+
+    <button
+      class="hero__word hero__word--visual"
+      type="button"
+      data-cat="visual"
+      data-nav-target="5"
+      data-parallax
+      data-depth="1.2"
+      aria-label="Ver proyectos visuales"
+    ><span class="hero__word-inner">visual</span></button>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--paper);
+  }
+
+  .hero__stage {
+    position: absolute;
+    inset: 0;
+  }
+
+  .hero__rect {
+    position: absolute;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+    cursor: pointer;
+    will-change: transform, clip-path;
+  }
+  .hero__rect--a { left: 13%; top: 20%;  width: 30%; height: 42%; }
+  .hero__rect--b { left: 57%; top: 42%;  width: 30%; height: 42%; }
+
+  .hero__rect-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0, 1);
+  }
+
+  /* recuadro azul por defecto; el hover funde el velo y revela el proyecto */
+  .hero__rect::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--blue);
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .hero__rect.is-hover::after { opacity: 0; }
+  .hero__rect.is-hover .hero__rect-img { transform: scale(1.05); }
+
+  .hero__word {
+    appearance: none;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    position: absolute;
+    overflow: hidden;
+    padding: 0.06em 0.06em 0.2em;
+    line-height: 0.88;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 10vw, 11rem);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    will-change: transform;
+  }
+  .hero__word-inner { display: block; will-change: transform; transition: color 0.3s ease; }
+
+  .hero__word--producto { left: 17%; top: 24%; }
+  .hero__word--visual   { left: 51%; top: 64%; }
+
+  .hero__word:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
+
+  @media (max-width: 720px) {
+    .hero__rect--a { left: 10%; top: 13%; width: 64%; height: 25%; }
+    .hero__word--producto { left: 7%; top: 24%; }
+    .hero__rect--b { left: 26%; top: 53%; width: 64%; height: 25%; }
+    .hero__word--visual { left: 20%; top: 64%; }
+    .hero__word { font-size: clamp(2.6rem, 17vw, 5.5rem); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__rect { clip-path: none !important; }
+    .hero__rect-img { transition: none; }
+    .hero__word-inner { transform: none !important; }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  const root = document.querySelector<HTMLElement>('[data-hero]');
+  if (root) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const rects = [...root.querySelectorAll<HTMLElement>('.hero__rect')];
+    const inners = [...root.querySelectorAll<HTMLElement>('.hero__word-inner')];
+
+    // recuadro azul → al pasar por la palabra o el rect, se revela la imagen
+    (['producto', 'visual'] as const).forEach((cat) => {
+      const rect = root.querySelector<HTMLElement>(`.hero__rect[data-cat="${cat}"]`);
+      if (!rect) return;
+      const on = () => rect.classList.add('is-hover');
+      const off = () => rect.classList.remove('is-hover');
+      root.querySelectorAll<HTMLElement>(`[data-cat="${cat}"]`).forEach((el) => {
+        el.addEventListener('mouseenter', on);
+        el.addEventListener('mouseleave', off);
+        el.addEventListener('focus', on, true);
+        el.addEventListener('blur', off, true);
+      });
+    });
+
+    if (!reduced) {
+      // entrada: los rectángulos se descubren de izquierda a derecha; las palabras
+      // suben tras su máscara (overflow del botón). Solo clip-path / transform.
+      gsap.set(rects, { clipPath: 'inset(0 100% 0 0)' });
+      gsap.set(inners, { yPercent: 118 });
+
+      gsap.timeline({ delay: 0.12 })
+        .to(rects, { clipPath: 'inset(0 0% 0 0)', duration: 0.9, ease: 'power3.inOut', stagger: 0.12 })
+        .to(inners, { yPercent: 0, duration: 0.95, ease: 'power4.out', stagger: 0.1 }, 0.28);
+
+      // parallax por puntero: cada capa con profundidad distinta — el desfase entre
+      // rect y palabra hace que el cruce respire al mover el cursor.
+      const layers = [...root.querySelectorAll<HTMLElement>('[data-parallax]')].map((el) => ({
+        depth: parseFloat(el.dataset.depth || '1'),
+        x: gsap.quickTo(el, 'x', { duration: 0.7, ease: 'power3' }),
+        y: gsap.quickTo(el, 'y', { duration: 0.7, ease: 'power3' }),
+      }));
+
+      window.addEventListener('pointermove', (e) => {
+        const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+        const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+        layers.forEach((l) => { l.x(nx * 16 * l.depth); l.y(ny * 11 * l.depth); });
+      });
+    }
+  }
+</script>

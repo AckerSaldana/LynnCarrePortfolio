@@ -1,0 +1,82 @@
+---
+// Targets = índice del frame destino en el stack (HeroFrame=0, IndexFrame=1, primer
+// proyecto=2). null = stub: la sección aún no existe (se cablea en fases siguientes).
+const nav: { label: string; target: number | null }[] = [
+  { label: 'proyectos', target: 2 },
+  { label: 'sobre mi', target: 1 },
+  { label: 'contacto', target: null },
+];
+---
+
+<header class="site-header" data-header>
+  <button class="site-header__mark" type="button" data-nav-target="0" aria-label="Lynn Carré — inicio">Lynn Carré</button>
+  <nav class="site-header__nav" aria-label="Principal">
+    {nav.map((item) => (
+      <button
+        type="button"
+        class="site-header__link"
+        data-nav-target={item.target ?? ''}
+        data-nav-stub={item.target === null ? '' : undefined}
+      >{item.label}</button>
+    ))}
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: clamp(1.05rem, 2.4vw, 2rem) var(--frame-pad);
+    pointer-events: none;
+  }
+
+  .site-header__mark,
+  .site-header__nav { pointer-events: auto; }
+
+  .site-header__mark {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-logo);
+    font-weight: 700;
+    font-size: clamp(1.15rem, 2.1vw, 1.7rem);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .site-header__nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.1rem, 2.6vw, 2.6rem);
+  }
+
+  .site-header__link {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(0.92rem, 1.25vw, 1.12rem);
+    color: var(--ink);
+    transition: color 0.25s ease;
+  }
+
+  .site-header__link:hover,
+  .site-header__link:focus-visible { color: var(--blue); }
+
+  @media (max-width: 640px) {
+    .site-header__nav { gap: 1rem; }
+    .site-header__link { font-size: 0.82rem; }
+  }
+</style>

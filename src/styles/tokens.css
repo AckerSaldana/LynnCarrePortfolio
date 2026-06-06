@@ -1,7 +1,7 @@
 :root {
-  --paper:  #F4F2ED;
+  --paper:  #EAEAEA;   /* gris claro frío — afinar en navegador */
   --ink:    #111111;
-  --blue:   #1F3FB8;
+  --blue:   #1E63F0;   /* cobalto brillante — afinar en navegador */
   --green:  #2E8B3D;
   --yellow: #F2C200;
   --red:    #E23B2E;
