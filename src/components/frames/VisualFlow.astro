@@ -1,0 +1,202 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface FlowProject { slug: string; title: string; color: string; ink: string; description?: string; meta?: string }
+interface Props { projects: FlowProject[] }
+
+const { projects } = Astro.props;
+
+const images = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+function findImage(slug: string): ImageMetadata | undefined {
+  for (const [path, img] of Object.entries(images)) {
+    if ((path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase() === slug) return img;
+  }
+  return undefined;
+}
+const slides = projects.map((p) => ({ ...p, img: findImage(p.slug) }));
+const total = String(slides.length).padStart(2, '0');
+---
+
+<div data-visual-flow class="flow" role="dialog" aria-modal="true" aria-label="Proyectos visuales" aria-hidden="true" tabindex="-1">
+  <header class="flow__bar">
+    <span class="flow__tag">Diseño visual</span>
+    <button type="button" class="flow__close" data-flow-close aria-label="Cerrar">cerrar <span aria-hidden="true">✕</span></button>
+  </header>
+
+  <div class="flow__stage">
+    {slides.map((s) => (
+      <article data-flow-slide data-slug={s.slug} data-color={s.color} data-ink={s.ink} class="flow__slide">
+        <div data-flow-content class="flow__content">
+          <div class="flow__plate">
+            {s.img && <Image class="flow__img" src={s.img} alt={s.title} widths={[480, 768, 1080]} sizes="(max-width: 820px) 70vw, 38vw" />}
+          </div>
+          <div class="flow__text">
+            <h2 class="flow__name">{s.title}</h2>
+            {s.description && <p class="flow__desc">{s.description}</p>}
+            {s.meta && <p class="flow__meta">{s.meta}</p>}
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <footer class="flow__foot">
+    <span class="flow__counter" data-flow-counter>01 / {total}</span>
+    <span class="flow__hint">desliza para avanzar</span>
+  </footer>
+</div>
+
+<style>
+  .flow {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: var(--blue);
+    color: var(--flow-ink, #fff);
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+  }
+
+  .flow__bar,
+  .flow__foot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(1.1rem, 2.4vw, 2rem) var(--frame-pad);
+    color: var(--flow-ink, #fff);
+    pointer-events: none;
+  }
+  .flow__bar { top: 0; }
+  .flow__foot { bottom: 0; }
+
+  .flow__tag,
+  .flow__counter,
+  .flow__hint {
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .flow__hint { opacity: 0.6; }
+
+  .flow__close {
+    pointer-events: auto;
+    appearance: none;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: inherit;
+    font-family: var(--font-body);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    display: inline-flex;
+    gap: 0.5em;
+    align-items: center;
+    transition: opacity 0.25s ease;
+  }
+  .flow__close:hover { opacity: 0.6; }
+
+  .flow__stage { position: absolute; inset: 0; }
+
+  .flow__slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* dos mitades iguales: la placa ancla pegada al centro desde la izquierda y el nombre
+     arranca a la derecha — así la posición de la placa NO depende del largo del nombre */
+  .flow__content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    column-gap: clamp(2rem, 6vw, 6rem);
+    padding: 0 var(--frame-pad);
+    width: 100%;
+    box-sizing: border-box;
+    will-change: transform;
+  }
+
+  /* la placa 4:5 del trabajo flota sobre el campo de color */
+  .flow__plate {
+    justify-self: end;
+    height: clamp(300px, 62vh, 660px);
+    aspect-ratio: 4 / 5;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.4);
+  }
+  .flow__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* columna derecha: nombre + descripción + meta, anclada al centro desde la derecha */
+  .flow__text {
+    justify-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2.2vh, 1.8rem);
+  }
+
+  .flow__name {
+    margin: 0;
+    max-width: 9ch;
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: lowercase;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    font-size: clamp(2.4rem, 7vw, 7rem);
+    color: var(--flow-ink, #fff);
+  }
+
+  .flow__desc {
+    margin: 0;
+    max-width: 34ch;
+    font-family: var(--font-body);
+    font-size: clamp(0.92rem, 1.05vw, 1.06rem);
+    line-height: 1.5;
+    color: var(--flow-ink, #fff);
+    opacity: 0.92;
+  }
+
+  .flow__meta {
+    margin: 0;
+    width: fit-content;
+    padding-top: clamp(0.4rem, 1vh, 0.8rem);
+    border-top: 1px solid color-mix(in srgb, var(--flow-ink, #fff) 32%, transparent);
+    font-family: var(--font-body);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--flow-ink, #fff);
+    opacity: 0.75;
+  }
+
+  @media (max-width: 820px) {
+    .flow__content { grid-template-columns: 1fr; justify-items: center; row-gap: 1.4rem; }
+    .flow__plate { justify-self: center; height: clamp(220px, 38vh, 360px); }
+    .flow__text { justify-self: center; align-items: center; text-align: center; gap: 0.9rem; }
+    .flow__name { max-width: none; font-size: clamp(2rem, 11vw, 3.4rem); }
+    .flow__desc { max-width: 42ch; }
+    .flow__meta { margin-inline: auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flow__content { will-change: auto; }
+  }
+</style>

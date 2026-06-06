@@ -33,3 +33,12 @@
     font-family: var(--font-display);
   }
 }
+
+/* SIN @layer (gana sobre @layer base): estado inicial antes de que monte el JS de
+   navegación. Sin esto los frames se apilan y el navegador pinta el último del DOM
+   (el índice visual) hasta que corre el script — notorio si el JS carga con latencia.
+   gsap (estilo inline) lo sobreescribe al navegar, igual que el overlay del flujo. */
+[data-frames] > [data-frame]:not([data-hero]) {
+  opacity: 0;
+  visibility: hidden;
+}

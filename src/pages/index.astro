@@ -6,6 +6,7 @@ import ProjectDetail from '../components/frames/ProjectDetail.astro';
 import BouquetDetail from '../components/frames/BouquetDetail.astro';
 import IndexFrame from '../components/frames/IndexFrame.astro';
 import VisualIndex from '../components/frames/VisualIndex.astro';
+import VisualFlow from '../components/frames/VisualFlow.astro';
 import Header from '../components/ui/Header.astro';
 
 // Proyectos (orden = frames 2,3,4...). El copy de Bouquet es del portafolio; el resto, de ejemplo.
@@ -46,17 +47,59 @@ const profile = {
 };
 
 // Diseño visual (identidad): índice de la sección "visual". Orden = fila en el índice.
+// color = campo de identidad del flujo; ink = texto sobre ese color (ajustables).
+// description + meta condensados del portafolio (infoproyectos.md), proyectos de Diseño Visual.
 const visualProjects = [
-  { slug: 'salmon', title: 'Salmón' },
-  { slug: 'tito', title: 'Tito' },
-  { slug: 'occidental', title: 'Occidental' },
-  { slug: 'expo-ingenierias', title: 'Expo Ingenierías' },
-  { slug: 'betterware', title: 'Betterware' },
-  { slug: 'cocina-habibi', title: 'Cocina Habibi' },
-  { slug: 'decadas', title: 'Décadas' },
-  { slug: 'ellassueñan', title: 'Ellas Sueñan' },
-  { slug: 'manualeic', title: 'Manual EIC' },
-  { slug: 'sacbe', title: 'Sacbé' },
+  {
+    slug: 'bonaterra', title: 'Bonaterra', color: '#4E8067', ink: '#FFFFFF',
+    description: 'Identidad visual de la línea de mobiliario Bonaterra: a partir de sus formas curvas y orgánicas se diseñó el logotipo y los manuales de ensamble.',
+    meta: 'Identidad de marca · AMA Studio',
+  },
+  {
+    slug: 'salmon', title: 'Salmón', color: '#E8654F', ink: '#FFFFFF',
+    description: 'Composición para un libro ABC infantil. El salmón, único pez que nada contra corriente, se abstrae en sus rasgos con un enfoque minimalista.',
+    meta: 'Composición editorial · Libro ABC',
+  },
+  {
+    slug: 'tito', title: 'Tito', color: '#2B6BE0', ink: '#FFFFFF',
+    description: 'Juguete modular para niños con TEA, de apoyo sensorial y motriz. Se desarrolló su logotipo, identidad y brand book completo.',
+    meta: 'Juguete e identidad · Tec + DIF',
+  },
+  {
+    slug: 'expo-ingenierias', title: 'Expo Ingenierías', color: '#E5A11B', ink: '#111111',
+    description: 'Rediseño del logotipo y el material gráfico del evento de la Escuela de Ingeniería y Ciencias del Tec, bajo su nueva identidad.',
+    meta: 'Identidad de evento · EIC, Tec',
+  },
+  {
+    slug: 'decadas', title: 'Décadas', color: '#3B43C4', ink: '#FFFFFF',
+    description: 'Identidad del evento que conmemoró 60 años de la primera computadora en el Tec: logotipo, redes, banners y fondos, con alcance nacional.',
+    meta: 'Identidad de evento · Tec de Monterrey',
+  },
+  {
+    slug: 'ellassueñan', title: 'Ellas Sueñan', color: '#D94E8E', ink: '#FFFFFF',
+    description: 'Campaña por el Día de la Mujer y la Niña en la Ciencia: niñas que sueñan, jóvenes que investigan y científicas que transforman.',
+    meta: 'Campaña · Tec + Ingenia',
+  },
+  {
+    slug: 'sacbe', title: 'Sacbé', color: '#C0392B', ink: '#FFFFFF',
+    description: 'Identidad del programa Sacbé STEM, inspirada en los fanzines de los 50s y el empoderamiento femenino para alumnas de prepas públicas.',
+    meta: 'Identidad de programa · Sacbé STEM',
+  },
+  {
+    slug: 'manualeic', title: 'Manual EIC', color: '#15807A', ink: '#FFFFFF',
+    description: 'Manual de identidad de la campaña de la EIC, bajo el concepto «ingeniería y ciencias encuentra la manera». Lanzado a nivel nacional.',
+    meta: 'Manual de marca · EIC, Tec',
+  },
+  {
+    slug: 'cocina-habibi', title: 'Cocina Habibi', color: '#C25A1E', ink: '#FFFFFF',
+    description: 'Etiquetas para la línea de congelados de Cocina Habibi, restaurante de comida árabe: kafta y empanadas, a la venta en sucursales.',
+    meta: 'Etiquetas de producto · Cocina Habibi',
+  },
+  {
+    slug: 'occidental', title: 'Occidental', color: '#1F3FB8', ink: '#FFFFFF',
+    description: 'Estrategia de marca e identidad para la ferretera Occidental, bajo el concepto «la ferretería como juguetería de los adultos».',
+    meta: 'Estrategia e identidad · Uniandes',
+  },
 ];
 
 // manifiesto art-directado: segmentos con énfasis tipográfico
@@ -87,6 +130,7 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
 
   <BouquetDetail />
   {projects.filter((p) => p.slug !== 'bouquet').map((p) => <ProjectDetail slug={p.slug} title={p.title} tag={p.tag} number={p.number} body={p.body} />)}
+  <VisualFlow projects={visualProjects} />
 
   <div class="cursor-img" data-cursor-img aria-hidden="true"><img alt="" decoding="async" /></div>
 
@@ -118,6 +162,7 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
 <script>
   import { gsap, SplitText } from '../lib/gsap';
   import { createFrameNavigator, type FrameRef } from '../lib/observer';
+  import { createVisualFlow } from '../lib/visualFlow';
   import { createScene } from '../lib/three/scene';
   import { loadModel, hasModel, getModelTilt } from '../lib/three/models';
   import { Group } from 'three';
@@ -303,6 +348,12 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
 
     let detailOpen = false;
 
+    // Flujo de proyectos visuales: overlay con su propio Observer; pausa el nav principal.
+    const flowEl = document.querySelector<HTMLElement>('[data-visual-flow]');
+    const flow = flowEl
+      ? createVisualFlow({ root: flowEl, reduced, onOpen: () => nav.disable(), onClose: () => nav.enable() })
+      : null;
+
     // Header + categorías del hero: cada control con data-nav-target salta a su frame.
     document.querySelectorAll<HTMLElement>('[data-nav-target]').forEach((el) => {
       el.addEventListener('click', () => {
@@ -367,7 +418,15 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         t.addEventListener('mouseenter', () => showCursorImg(t.dataset.photo));
         t.addEventListener('mouseleave', hideCursorImg);
       }
-      t.addEventListener('click', () => openDetail(t.dataset.project));
+      t.addEventListener('click', () => {
+        // fila del índice visual → abre el flujo; proyecto de producto → abre su detalle
+        if (t.dataset.visual !== undefined && flow) {
+          hideCursorImg();
+          flow.openBySlug(t.dataset.project ?? '');
+        } else {
+          openDetail(t.dataset.project);
+        }
+      });
     });
     document.querySelectorAll<HTMLElement>('[data-detail-close]').forEach((b) => b.addEventListener('click', closeDetail));
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && detailOpen) closeDetail(); });
