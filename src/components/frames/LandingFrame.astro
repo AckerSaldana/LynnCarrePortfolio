@@ -1,0 +1,63 @@
+---
+// Landing: portada a pantalla completa con video en loop y SIN scroll.
+// NO es un [data-frame] — el navegador de frames nunca lo indexa; vive como overlay
+// (z-40, entre los frames z-10 y el Header z-50). Se muestra al cargar; se sale solo
+// por el nav del Header. Mientras está visible, el nav principal queda en pausa.
+//
+// Asset pendiente: soltar `public/landing.mp4` (+ opcional `public/landing-poster.jpg`).
+// Hasta entonces el fondo oscuro (var(--ink)) del <section> se ve a través del <video>.
+---
+
+<section data-landing class="landing" aria-label="Inicio">
+  <video
+    class="landing__video"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+    poster="/landing-poster.jpg"
+  >
+    <source src="/landing.mp4" type="video/mp4" />
+  </video>
+
+  <div class="landing__veil" aria-hidden="true"></div>
+
+  <div class="landing__copy">
+    <h1 class="landing__headline">
+      <span class="landing__line"><span class="landing__line-inner" data-landing-line>Arte e industrias creativas</span></span>
+    </h1>
+  </div>
+</section>
+
+<style>
+  /* Reglas críticas de primer pintado (.landing, .landing__copy, .landing__headline)
+     viven en global.css para evitar el FOUC de los estilos scoped en dev. */
+  .landing__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* velo sutil para legibilidad del titular sobre cualquier video */
+  .landing__veil {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ink) 30%, transparent) 0%,
+      transparent 38%,
+      color-mix(in srgb, var(--ink) 38%, transparent) 100%
+    );
+  }
+
+  /* máscara por línea: el texto sube desde abajo tras el overflow oculto.
+     La animación de subida vive en el <style is:inline> de Base.astro (render-blocking), así corre
+     al primer pintado sin depender de JS. Al re-mostrar la portada (wordmark) la reinicia index.astro. */
+  .landing__line { display: block; overflow: hidden; padding-bottom: 0.08em; }
+  .landing__line-inner { display: block; will-change: transform; }
+</style>

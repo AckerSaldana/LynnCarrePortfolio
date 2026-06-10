@@ -1,15 +1,15 @@
 ---
-// Targets = índice del frame destino en el stack (HeroFrame=0, IndexFrame=1, primer
-// proyecto=2). null = stub: la sección aún no existe (se cablea en fases siguientes).
+// Targets = índice del frame destino en el stack: selector=0, sobre mí=1, carrusel de
+// producto=2, índice visual=3, contacto (colofón)=4. null = stub (sección por construir).
 const nav: { label: string; target: number | null }[] = [
-  { label: 'proyectos', target: 2 },
+  { label: 'proyectos', target: 0 },
   { label: 'sobre mi', target: 1 },
-  { label: 'contacto', target: null },
+  { label: 'contacto', target: 4 },
 ];
 ---
 
-<header class="site-header" data-header>
-  <button class="site-header__mark" type="button" data-nav-target="0" aria-label="Lynn Carré — inicio">Lynn Carré</button>
+<header class="site-header is-on-landing" data-header>
+  <button class="site-header__mark" type="button" data-landing-home aria-label="Lynn Carré — inicio">Lynn Carré</button>
   <nav class="site-header__nav" aria-label="Principal">
     {nav.map((item) => (
       <button
@@ -74,6 +74,12 @@ const nav: { label: string; target: number | null }[] = [
 
   .site-header__link:hover,
   .site-header__link:focus-visible { color: var(--blue); }
+
+  /* sobre el video oscuro de la portada, el nav vira a claro (lo alterna el script) */
+  .site-header.is-on-landing .site-header__mark,
+  .site-header.is-on-landing .site-header__link { color: var(--paper); }
+  .site-header.is-on-landing .site-header__link:hover,
+  .site-header.is-on-landing .site-header__link:focus-visible { color: var(--blue); }
 
   @media (max-width: 640px) {
     .site-header__nav { gap: 1rem; }

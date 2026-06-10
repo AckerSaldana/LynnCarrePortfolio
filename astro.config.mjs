@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
+    // permite servir el dev a través del túnel temporal de Cloudflare (*.trycloudflare.com)
+    server: { allowedHosts: ['.trycloudflare.com'] },
   },
 
   // Fuentes locales — pendiente: soltar los archivos en src/assets/fonts/.

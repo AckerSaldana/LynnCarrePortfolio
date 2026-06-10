@@ -2,12 +2,12 @@
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
-interface VisualProject { slug: string; title: string; }
+interface VisualProject { slug: string; title: string; meta?: string; color?: string; ink?: string }
 interface Props { projects: VisualProject[] }
 
 const { projects } = Astro.props;
 
-// foto por proyecto (mismo slug) → thumb para la imagen que sigue al cursor en hover
+// foto por proyecto (mismo slug)
 const images = import.meta.glob<ImageMetadata>(
   '../../assets/projects/*.{jpg,jpeg,png,webp,avif}',
   { eager: true, import: 'default' },
@@ -18,136 +18,149 @@ function findImage(slug: string): ImageMetadata | undefined {
   }
   return undefined;
 }
-const rows = await Promise.all(
+
+// composición asimétrica (col×row) por posición — collage editorial, no una grilla uniforme
+const SPANS: [number, number][] = [[2, 2], [1, 1], [1, 2], [1, 1], [2, 1], [1, 2], [2, 2], [1, 1], [2, 1], [1, 1]];
+
+const tiles = await Promise.all(
   projects.map(async (p, i) => {
     const img = findImage(p.slug);
-    const thumb = img ? (await getImage({ src: img, width: 640, format: 'webp' })).src : undefined;
-    return { ...p, n: String(i + 1).padStart(2, '0'), thumb };
+    const src = img ? (await getImage({ src: img, width: 1100, format: 'webp' })).src : undefined;
+    const [c, r] = SPANS[i % SPANS.length];
+    return { ...p, src, c, r };
   }),
 );
 ---
 
 <section data-frame data-visual-index data-tag="diseño visual" data-steps="0" class="vix">
-  <div class="vix__head">
-    <span class="vix__label">Diseño visual</span>
-    <span class="vix__count">{rows.length} proyectos</span>
-  </div>
-
-  <ul class="vix__list">
-    {rows.map((r) => (
-      <li class="vix__row">
-        <button type="button" class="vix__item" data-project={r.slug} data-photo={r.thumb} data-visual>
-          <span class="vix__n">{r.n}</span>
-          <span class="vix__name">{r.title}</span>
-          <span class="vix__arrow" aria-hidden="true">↗</span>
+  <div class="vix__scroll" data-visual-scroll>
+    <div class="vix__grid">
+      {tiles.map((t) => (
+        <button
+          type="button"
+          class="vix__tile"
+          style={`--c:${t.c};--r:${t.r};--col:${t.color ?? '#1E63F0'};--cink:${t.ink ?? '#fff'}`}
+          data-project={t.slug}
+          data-visual
+          aria-label={t.title}
+        >
+          {t.src && <span class="vix__media"><img src={t.src} alt={t.title} loading="lazy" decoding="async" /></span>}
+          <span class="vix__cap">
+            <span class="vix__name">{t.title}</span>
+            {t.meta && <span class="vix__meta">{t.meta}</span>}
+          </span>
         </button>
-      </li>
-    ))}
-  </ul>
+      ))}
+    </div>
+  </div>
 </section>
 
 <style>
-  .vix {
-    position: absolute;
-    inset: 0;
-    background: var(--paper);
-    color: var(--ink);
-    display: flex;
-    flex-direction: column;
-    padding: clamp(5rem, 13vh, 8.5rem) var(--frame-pad) clamp(1.6rem, 4vh, 3rem);
-    box-sizing: border-box;
+  .vix { position: absolute; inset: 0; background: var(--paper); color: var(--ink); }
+  .vix__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(3rem, 9vh, 6rem);
   }
 
-  .vix__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: clamp(0.8rem, 2vh, 1.6rem);
-    font-family: var(--font-body);
-    font-size: 0.66rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-  }
-  .vix__count { opacity: 0.45; }
-
-  .vix__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .vix__row {
-    flex: 1;
-    border-top: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-  }
-  .vix__row:last-child {
-    border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  .vix__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: clamp(130px, 15vw, 230px);
+    grid-auto-flow: dense;
+    gap: clamp(0.5rem, 1vw, 1rem);
   }
 
-  .vix__item {
+  .vix__tile {
+    grid-column: span var(--c, 1);
+    grid-row: span var(--r, 1);
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
     appearance: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    will-change: transform;
+  }
+  .vix__media { position: absolute; inset: 0; }
+  .vix__media img {
     width: 100%;
     height: 100%;
-    background: none;
-    border: 0;
-    cursor: pointer;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0, 1);
+  }
+  .vix__tile:hover .vix__media img,
+  .vix__tile:focus-visible .vix__media img { transform: scale(1.06); }
+
+  /* leyenda: barra del color de identidad del proyecto que sube al hover (no genérica) */
+  .vix__cap {
+    position: absolute;
+    inset: auto 0 0 0;
     display: flex;
-    align-items: center;
-    gap: clamp(1rem, 3vw, 2.4rem);
-    padding: 0 0.2rem;
-    color: var(--ink);
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: clamp(0.7rem, 1.3vw, 1.15rem) clamp(0.8rem, 1.4vw, 1.25rem);
     text-align: left;
+    background: var(--col);
+    color: var(--cink);
+    transform: translateY(101%);
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0, 1);
   }
-
-  .vix__n {
-    font-family: var(--font-body);
-    font-size: clamp(0.7rem, 1vw, 0.86rem);
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    opacity: 0.4;
-    width: 2.4ch;
-    flex-shrink: 0;
-    transition: opacity 0.3s ease;
-  }
-
+  .vix__tile:hover .vix__cap,
+  .vix__tile:focus-visible .vix__cap { transform: translateY(0); }
   .vix__name {
-    flex: 1;
     font-family: var(--font-display);
     font-weight: 700;
-    text-transform: lowercase;
     letter-spacing: -0.01em;
     line-height: 1;
-    font-size: clamp(1.5rem, 4.6vh, 3.4rem);
-    transform: translateX(0);
-    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0, 1), color 0.3s ease;
+    font-size: clamp(1rem, 1.5vw, 1.5rem);
   }
-
-  .vix__arrow {
+  .vix__meta {
     font-family: var(--font-body);
-    font-size: clamp(1rem, 1.6vw, 1.5rem);
-    opacity: 0;
-    transform: translate(-8px, 0);
-    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.7, 0, 1);
+    font-size: clamp(0.68rem, 0.85vw, 0.86rem);
+    opacity: 0.82;
   }
-
-  /* hover: el nombre se desplaza y pinta de azul, asoma la flecha, el número se aviva */
-  .vix__item:hover .vix__name,
-  .vix__item:focus-visible .vix__name {
-    transform: translateX(clamp(0.6rem, 1.4vw, 1.4rem));
-    color: var(--blue);
-  }
-  .vix__item:hover .vix__arrow,
-  .vix__item:focus-visible .vix__arrow {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-  .vix__item:hover .vix__n,
-  .vix__item:focus-visible .vix__n { opacity: 0.8; }
 
   @media (max-width: 820px) {
-    .vix__name { font-size: clamp(1.3rem, 3.6vh, 2.4rem); }
-    .vix__head { font-size: 0.58rem; }
+    .vix__grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: clamp(140px, 34vw, 220px); }
+    .vix__tile { grid-column: span min(var(--c, 1), 2); }
   }
 </style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  const root = document.querySelector<HTMLElement>('[data-visual-index]');
+  if (root) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scroller = root.querySelector<HTMLElement>('[data-visual-scroll]');
+    const tiles = [...root.querySelectorAll<HTMLElement>('.vix__tile')];
+    let io: IntersectionObserver | null = null;
+
+    if (!reduced) gsap.set(tiles, { autoAlpha: 0, y: 32 });
+
+    function build() {
+      if (reduced) { gsap.set(tiles, { autoAlpha: 1, y: 0 }); return; }
+      if (io) return;
+      io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => {
+          if (e.isIntersecting) {
+            gsap.to(e.target, { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out' });
+            io?.unobserve(e.target);
+          }
+        }),
+        { root: scroller, threshold: 0.1 },
+      );
+      tiles.forEach((t) => io!.observe(t));
+    }
+
+    // index.astro dispara 'visual:enter' al navegar a este frame → arma el reveal en cascada
+    window.addEventListener('visual:enter', build);
+  }
+</script>

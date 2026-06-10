@@ -5,6 +5,8 @@ export interface SceneHandle {
   add(obj: THREE.Object3D): void;
   remove(obj: THREE.Object3D): void;
   frameObject(obj: THREE.Object3D, fill?: number): void;
+  frameToSpan(span: number, fill?: number): void;
+  getFrameDist(): number;
   setActive(active: boolean): void;
   dispose(): void;
 }
@@ -56,6 +58,9 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
     if (a === active) return;
     active = a;
     renderer.setAnimationLoop(a ? render : null);
+    // al pausar, un último render del estado actual (modelos ya ocultos) deja el canvas LIMPIO;
+    // si no, queda el último frame (p. ej. el bouquet) asomándose entre transiciones de frames.
+    if (!a) render();
   }
 
   function onResize() {
@@ -84,10 +89,22 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
     camera.updateProjectionMatrix();
   }
 
+  // Encuadre por span explícito (sin objeto): el carrusel monta varios modelos y
+  // quiere una sola distancia de cámara consistente, no la del último .glb cargado.
+  function frameToSpan(span: number, fill = 1.6) {
+    frameDist = (span / (2 * Math.tan((Math.PI * camera.fov) / 360))) * fill;
+    camera.near = frameDist / 100;
+    camera.far = frameDist * 100;
+    applyView();
+    camera.updateProjectionMatrix();
+  }
+
   return {
     add: (o) => scene.add(o),
     remove: (o) => scene.remove(o),
     frameObject,
+    frameToSpan,
+    getFrameDist: () => frameDist,
     setActive,
     dispose() {
       renderer.setAnimationLoop(null);

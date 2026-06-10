@@ -1,0 +1,373 @@
+---
+interface Props {
+  email: string;
+  phone: string;
+  location?: string;
+}
+const { email, phone, location = 'Monterrey, México' } = Astro.props;
+
+const [mailLocal] = email.split('@');
+const mailDomain = email.slice(mailLocal.length); // incluye la @
+const telHref = `tel:+52${phone.replace(/\s/g, '')}`; // lada +52 supuesta — confirmar con la clienta
+
+// Redes: placeholders editables (aún sin URLs en el repo).
+const socials = [
+  { label: 'Instagram', href: '#' },
+  { label: 'LinkedIn', href: '#' },
+  { label: 'Behance', href: '#' },
+];
+
+// "Contacto" como BOOKEND del hero: la portada abre con dos palabras gigantes que clicas para
+// entrar; el contacto cierra con el correo gigante que clicas para escribir. Mismo lenguaje:
+// display bold, alineado a la izquierda, asimétrico, cobalto de acento, reveals enmascarados.
+// Frame del stack (paper/ink, mismo contrato que About); se llega solo por el header.
+---
+
+<section data-frame data-contact data-tag="contacto" data-steps="0" class="contact">
+  <div class="contact__scroll" data-contact-scroll>
+    <div class="contact__main">
+      <h2 class="contact__head" data-co-head>Hagamos algo que valga la pena <em>contar</em>.</h2>
+
+      <div class="contact__mailwrap">
+        <a class="contact__mail" data-co-mail href={`mailto:${email}`} aria-label={`Escribir a ${email}`}>
+          <span class="contact__mailline"><span class="contact__mailline-in" data-co-mailline>{mailLocal}</span></span>
+          <span class="contact__mailline"><span class="contact__mailline-in" data-co-mailline>{mailDomain}</span></span>
+        </a>
+      </div>
+
+      <div class="contact__copyrow" data-co-copyrow>
+        <span class="copyrow__rest" data-co-rest>
+          <button class="contact__copy" type="button" data-co-copy>copiar correo</button>
+        </span>
+        <span class="copyrow__done" data-co-done aria-hidden="true">copiado — te leo pronto</span>
+      </div>
+      <span class="sr-only" aria-live="polite" data-co-announce></span>
+    </div>
+
+    <footer class="contact__meta" data-co-meta>
+      <div class="contact__rule" data-co-rule></div>
+      <div class="contact__metarow">
+        <div class="contact__metacol">
+          <span class="contact__label">Teléfono</span>
+          <a class="contact__val contact__link" href={telHref} aria-label={`Llamar al ${phone}`}>{phone}</a>
+        </div>
+        <div class="contact__metacol">
+          <span class="contact__label">Ubicación</span>
+          <span class="contact__val">{location}</span>
+        </div>
+        <div class="contact__metacol contact__metacol--social">
+          <span class="contact__label">Redes</span>
+          <span class="contact__socials">
+            {socials.map((s) => (
+              <a class="contact__link" href={s.href} aria-label={s.label}>{s.label}<span class="contact__arrow" aria-hidden="true">↗</span></a>
+            ))}
+          </span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<style>
+  .contact { position: absolute; inset: 0; background: var(--paper); color: var(--ink); }
+  .contact :global(::selection) { background: var(--blue); color: var(--paper); }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+
+  .contact__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(5rem, 13vh, 8.5rem) var(--frame-pad) clamp(2rem, 5vh, 3.5rem);
+  }
+
+  /* ── el statement (titular + correo héroe) ──────────────────────────── */
+  .contact__main {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(2rem, 6vh, 4.5rem) 0;
+  }
+  .contact__head {
+    margin: 0;
+    max-width: 17ch;
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    font-size: clamp(1.9rem, 4.4vw, 4rem);
+  }
+  .contact :global(em) {
+    font-style: italic;
+    font-weight: 700;
+    color: var(--blue);
+  }
+  /* máscara por línea del titular (la inserta SplitText en JS) */
+  .contact :global(.contact__head-mask) { display: block; overflow: hidden; padding: 0 0.06em 0.04em; margin: 0 -0.06em; }
+
+  /* el correo: la pieza monumental — eco de las palabras gigantes del hero */
+  .contact__mailwrap { margin-top: clamp(1.6rem, 4vh, 3rem); }
+  .contact__mail {
+    display: inline-block;
+    text-decoration: none;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 0.96;
+    letter-spacing: -0.03em;
+    font-size: clamp(2.4rem, 8vw, 7rem);
+    transition: color 0.35s cubic-bezier(0.2, 0.7, 0, 1);
+  }
+  .contact__mailline { display: block; overflow: hidden; padding-bottom: 0.06em; }
+  .contact__mailline-in { display: block; will-change: transform; }
+  .contact__mail:hover,
+  .contact__mail:focus-visible { color: var(--blue); }
+  .contact__mail:focus-visible { outline: 2px solid var(--ink); outline-offset: 8px; }
+
+  /* fila de copiar: slot de altura fija, swap sin saltos de layout */
+  .contact__copyrow {
+    display: grid;
+    height: 1.8em;
+    margin-top: clamp(1.2rem, 3vh, 2rem);
+    overflow: hidden;
+    font-size: clamp(0.92rem, 1.1vw, 1.05rem);
+  }
+  .contact__copyrow > * {
+    grid-area: 1 / 1;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    will-change: transform;
+  }
+  .copyrow__done { color: color-mix(in srgb, var(--ink) 70%, var(--paper)); }
+  .contact__copy {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--blue);
+    white-space: nowrap;
+  }
+  .contact__copy::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -4px;
+    height: 1.5px;
+    background: var(--blue);
+    transform: scaleX(0);
+    transform-origin: right center;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .contact__copy:hover::after,
+  .contact__copy:focus-visible::after { transform: scaleX(1); transform-origin: left center; }
+  .contact__copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  /* ── meta inferior (detalles reales) ────────────────────────────────── */
+  .contact__rule {
+    height: 1px;
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  .contact__metarow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(2rem, 6vw, 6rem);
+    margin-top: clamp(1.2rem, 3vh, 2rem);
+  }
+  .contact__metacol { display: flex; flex-direction: column; gap: 0.4rem; }
+  .contact__label {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--blue);
+  }
+  .contact__val {
+    font-size: clamp(1rem, 1.3vw, 1.25rem);
+    color: var(--ink);
+  }
+  .contact__socials { display: flex; flex-wrap: wrap; gap: clamp(1rem, 2vw, 2rem); }
+  .contact__link {
+    position: relative;
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.25s ease;
+    width: fit-content;
+  }
+  .contact__link::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -3px;
+    height: 1.5px;
+    background: var(--blue);
+    transform: scaleX(0);
+    transform-origin: right center;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .contact__link:hover,
+  .contact__link:focus-visible { color: var(--blue); }
+  .contact__link:hover::after,
+  .contact__link:focus-visible::after { transform: scaleX(1); transform-origin: left center; }
+  .contact__link:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .contact__arrow { display: inline-block; margin-left: 0.15em; font-size: 0.85em; }
+
+  /* ── desktop bajo: que el statement quepa sin scroll ────────────────── */
+  @media (min-width: 721px) and (max-height: 720px) {
+    .contact__scroll { padding-top: 4.6rem; }
+    .contact__main { padding: 1.4rem 0; }
+    .contact__head { font-size: clamp(1.7rem, 3.4vw, 3rem); }
+    .contact__mail { font-size: clamp(2.2rem, 6.4vw, 5.4rem); }
+    .contact__mailwrap { margin-top: 1.4rem; }
+    .contact__copyrow { margin-top: 1rem; }
+  }
+
+  /* ── móvil ──────────────────────────────────────────────────────────── */
+  @media (max-width: 720px) {
+    .contact__scroll { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+    .contact__head { font-size: clamp(1.7rem, 8vw, 2.6rem); max-width: 16ch; }
+    .contact__mail { font-size: clamp(2.1rem, 12vw, 3.8rem); }
+    .contact__metarow { gap: 1.6rem 2.4rem; }
+    .contact__copy { padding: 0.5rem 0; } /* tap target */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact__mailline-in { transform: none !important; }
+    .contact__rule { transform: scaleX(1) !important; }
+  }
+</style>
+
+<script>
+  import { gsap, SplitText } from '../../lib/gsap';
+
+  const root = document.querySelector<HTMLElement>('[data-contact]');
+  if (root) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const $ = (s: string) => root.querySelector<HTMLElement>(s);
+    const $$ = (s: string) => [...root.querySelectorAll<HTMLElement>(s)];
+
+    const head = $('[data-co-head]');
+    const mailLines = $$('[data-co-mailline]');
+    const copyrow = $('[data-co-copyrow]');
+    const restEl = $('[data-co-rest]');
+    const doneEl = $('[data-co-done]');
+    const announce = $('[data-co-announce]');
+    const copyBtn = $('[data-co-copy]');
+    const rule = $('[data-co-rule]');
+    const meta = $('[data-co-meta]');
+    const metacols = $$('.contact__metacol');
+    const mailA = $('[data-co-mail]');
+    const EMAIL = mailA?.getAttribute('href')?.replace('mailto:', '') ?? '';
+
+    let introPlayed = false;
+    let headSplit: SplitText | null = null;
+    let headLines: HTMLElement[] = [];
+
+    // parte el titular en líneas con su propia máscara (mismo patrón que el manifiesto del índice)
+    function buildHeadLines() {
+      if (!head || reduced) return;
+      headSplit?.revert();
+      headSplit = new SplitText(head, { type: 'lines', linesClass: 'contact__head-line' });
+      headLines = headSplit.lines as HTMLElement[];
+      headLines.forEach((line) => {
+        const mask = document.createElement('span');
+        mask.className = 'contact__head-mask';
+        line.parentNode?.insertBefore(mask, line);
+        mask.appendChild(line);
+      });
+    }
+
+    function prepare() {
+      gsap.set(doneEl, { yPercent: 110 });
+      if (reduced) return;
+      gsap.set(mailLines, { yPercent: 120 });
+      gsap.set(copyrow, { autoAlpha: 0, y: 14 });
+      gsap.set(rule, { scaleX: 0 });
+      gsap.set(metacols, { autoAlpha: 0, y: 16 });
+      if (headLines.length) gsap.set(headLines, { yPercent: 120 });
+    }
+
+    if (!reduced) {
+      if (document.fonts?.ready) document.fonts.ready.then(() => { buildHeadLines(); prepare(); });
+      else { buildHeadLines(); prepare(); }
+    } else {
+      prepare();
+    }
+
+    // re-split en resize (las líneas re-fluyen); si ya se reveló, déjalo en su estado final
+    let resizeT = 0;
+    window.addEventListener('resize', () => {
+      if (reduced) return;
+      window.clearTimeout(resizeT);
+      resizeT = window.setTimeout(() => {
+        buildHeadLines();
+        if (introPlayed) gsap.set(headLines, { yPercent: 0 });
+        else gsap.set(headLines, { yPercent: 120 });
+      }, 200);
+    });
+
+    async function playIntro() {
+      if (introPlayed) return;
+      introPlayed = true;
+      if (reduced) return; // todo visible desde el primer pintado
+      await document.fonts?.ready;
+      const tl = gsap.timeline({ delay: 0.12 });
+      if (headLines.length) {
+        tl.to(headLines, { yPercent: 0, duration: 1, ease: 'power4.out', stagger: 0.1 }, 0.1);
+      }
+      tl.to(mailLines, { yPercent: 0, duration: 1, ease: 'power4.out', stagger: 0.1 }, 0.5)
+        .to(copyrow, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 0.9)
+        .to(rule, { scaleX: 1, duration: 0.9, ease: 'power3.inOut' }, 0.95)
+        .to(metacols, { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, 1.05);
+    }
+
+    // index.astro despacha 'contact:enter' al navegar a este frame
+    window.addEventListener('contact:enter', playIntro);
+
+    // copiar: nunca un clic mudo — sin clipboard, vira a mailto
+    let copyBusy = false;
+    copyBtn?.addEventListener('click', async () => {
+      if (copyBusy) return;
+      try {
+        await navigator.clipboard.writeText(EMAIL);
+      } catch {
+        if (copyBtn) copyBtn.textContent = 'abre tu correo ↗';
+        window.location.href = `mailto:${EMAIL}`;
+        return;
+      }
+      copyBusy = true;
+      if (announce) announce.textContent = 'Correo copiado al portapapeles';
+      const finish = () => { copyBusy = false; if (announce) announce.textContent = ''; };
+      if (reduced) {
+        gsap.set(restEl, { yPercent: -110 });
+        gsap.set(doneEl, { yPercent: 0 });
+        window.setTimeout(() => {
+          gsap.set(restEl, { yPercent: 0 });
+          gsap.set(doneEl, { yPercent: 110 });
+          finish();
+        }, 2200);
+        return;
+      }
+      gsap.timeline({ onComplete: finish })
+        .to(restEl, { yPercent: -110, duration: 0.3, ease: 'power3.in' }, 0)
+        .fromTo(doneEl, { yPercent: 110 }, { yPercent: 0, duration: 0.35, ease: 'power3.out' }, 0.18)
+        .to(doneEl, { yPercent: -110, duration: 0.3, ease: 'power3.in' }, 2.2)
+        .fromTo(restEl, { yPercent: 110 }, { yPercent: 0, duration: 0.35, ease: 'power3.out' }, 2.38);
+    });
+  }
+</script>

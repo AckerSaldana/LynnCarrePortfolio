@@ -18,6 +18,27 @@ const { title = 'Lynn Carré — Portafolio' } = Astro.props;
     <title>{title}</title>
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
     <link rel="stylesheet" href="https://use.typekit.net/ste8qmj.css" />
+    <style is:inline>
+      /* ESTADO DE PRIMER PINTADO — render-blocking (inline en el <head>), no depende de global.css ni
+         de los estilos scoped, que en dev se inyectan por JS y llegan tarde con port-forwarding.
+         Sin esto: parpadean los frames y la portada/nav aparecen sueltos antes de hidratar. */
+      [data-frames] > [data-frame]:not([data-hero]) { opacity: 0; visibility: hidden; }
+
+      [data-landing] { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: #111; }
+      [data-landing] .landing__copy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: clamp(24px, 4vw, 80px); text-align: center; pointer-events: none; }
+      [data-landing] .landing__headline { margin: 0; color: #eaeaea; font-weight: 700; line-height: 1.06; letter-spacing: -0.01em; font-size: clamp(1.5rem, 6vw, 6rem); white-space: nowrap; font-family: "clother", "Avenir Next", "Futura", "Century Gothic", system-ui, sans-serif; }
+      [data-landing] .landing__line { display: block; overflow: hidden; padding-bottom: 0.08em; }
+      /* el titular sube por animación CSS (sin depender de JS): se ve igual al primer pintado */
+      [data-landing] .landing__line-inner { display: block; animation: landingRise 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both; }
+      @keyframes landingRise { from { transform: translateY(116%); } to { transform: translateY(0); } }
+
+      .site-header { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: clamp(1.05rem, 2.4vw, 2rem) clamp(24px, 4vw, 80px); pointer-events: none; }
+      .site-header__mark, .site-header__nav { pointer-events: auto; }
+      .site-header__nav { display: flex; align-items: center; gap: clamp(1.1rem, 2.6vw, 2.6rem); }
+      .site-header.is-on-landing .site-header__mark, .site-header.is-on-landing .site-header__link { color: #eaeaea; }
+
+      @media (prefers-reduced-motion: reduce) { [data-landing] .landing__line-inner { animation: none; } }
+    </style>
   </head>
   <body class="min-h-screen bg-paper text-ink antialiased">
     <slot />

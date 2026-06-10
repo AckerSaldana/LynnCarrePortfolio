@@ -29,6 +29,7 @@ export interface FrameNavigatorOptions {
 export interface FrameNavigator {
   advance(dir: 1 | -1): void;
   goTo(target: number): void;
+  jumpTo(target: number): void;
   enable(): void;
   disable(): void;
   destroy(): void;
@@ -58,26 +59,23 @@ export function createFrameNavigator(opts: FrameNavigatorOptions): FrameNavigato
     });
   }
 
-  function advance(dir: 1 | -1) {
-    if (animating) return;
+  // Devuelve true solo si hubo un avance real (para no candar el scroll en los extremos).
+  function advance(dir: 1 | -1): boolean {
+    if (animating) return false;
     const frame = frames[index];
 
-    // ¿queda sub-paso de ruleta en esta dirección dentro del frame?
+    // ¿queda sub-paso de ruleta en esta dirección dentro del frame? (p. ej. modelos del carrusel)
     const nextStep = step + dir;
     if (rotate && nextStep >= 0 && nextStep <= frame.steps) {
       run(rotate(frame, step, nextStep, dir), () => {
         step = nextStep;
       });
-      return;
+      return true;
     }
 
-    // sub-pasos agotados: cambiamos de frame
-    const next = index + dir;
-    if (next < 0 || next >= frames.length) return;
-    run(transition(frame.el, frames[next].el, dir), () => {
-      index = next;
-      step = dir === 1 ? 0 : frames[next].steps;
-    });
+    // Sub-pasos agotados: el scroll NO cambia de sección. Cada frame es su propia página; el salto
+    // entre secciones es solo por el header / las categorías (goTo). Así "Producto" no entra a "Visual".
+    return false;
   }
 
   function goTo(target: number) {
@@ -87,6 +85,17 @@ export function createFrameNavigator(opts: FrameNavigatorOptions): FrameNavigato
       index = target;
       step = 0;
     });
+  }
+
+  // Salto INSTANTÁNEO (sin flip): muestra el frame destino de golpe y notifica. Se usa al salir de
+  // la portada para que la sección aparezca directa (no se vea el flip desde el selector).
+  function jumpTo(target: number) {
+    if (target < 0 || target >= frames.length) return;
+    frames.forEach((f, i) => gsap.set(f.el, { autoAlpha: i === target ? 1 : 0, yPercent: 0 }));
+    index = target;
+    step = 0;
+    animating = false;
+    emit();
   }
 
   function onKey(e: KeyboardEvent) {
@@ -116,6 +125,18 @@ export function createFrameNavigator(opts: FrameNavigatorOptions): FrameNavigato
 
   // Navegación por evento: el wheelSpeed -1 hace que un scroll hacia abajo dispare
   // onUp (siguiente) y hacia arriba dispare onDown (anterior) — config de la demo oficial.
+  // Un gesto = un paso SIN bloquear el scroll: tras un avance real candamos la cola de inercia y
+  // soltamos el candado al detenerse (onStop, ágil para scroll intermitente) O tras LOCK_MS (red de
+  // seguridad para que el scroll continuo/rápido nunca se quede trabado).
+  const LOCK_MS = 900;
+  let momentumLock = false;
+  let lockTO = 0;
+  const releaseLock = () => { momentumLock = false; window.clearTimeout(lockTO); };
+  const armLock = () => {
+    momentumLock = true;
+    window.clearTimeout(lockTO);
+    lockTO = window.setTimeout(releaseLock, LOCK_MS);
+  };
   const observer = Observer.create({
     target: window,
     type: "wheel,touch,pointer",
@@ -123,8 +144,9 @@ export function createFrameNavigator(opts: FrameNavigatorOptions): FrameNavigato
     tolerance: 50,
     dragMinimum: 10,
     preventDefault: true,
-    onUp: () => advance(1),
-    onDown: () => advance(-1),
+    onUp: () => { if (!momentumLock && advance(1)) armLock(); },
+    onDown: () => { if (!momentumLock && advance(-1)) armLock(); },
+    onStop: () => releaseLock(),
   });
 
   window.addEventListener("keydown", onKey);
@@ -133,6 +155,7 @@ export function createFrameNavigator(opts: FrameNavigatorOptions): FrameNavigato
   return {
     advance,
     goTo,
+    jumpTo,
     enable: () => {
       enabled = true;
       observer.enable();

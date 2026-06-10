@@ -42,3 +42,34 @@
   opacity: 0;
   visibility: hidden;
 }
+
+/* Portada (landing): mismo problema FOUC — en dev los estilos scoped se inyectan por JS
+   y llegan tarde, así que el titular parpadea en 2 líneas antes de aplicar el nowrap.
+   Las reglas críticas de primer pintado viven aquí (render-blocking). */
+.landing {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  background: var(--ink);
+}
+.landing__copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--frame-pad);
+  pointer-events: none;
+  text-align: center;
+}
+.landing__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.5rem, 6vw, 6rem);
+  white-space: nowrap; /* nunca se parte en 2 líneas, ni en el primer pintado */
+  color: var(--paper);
+}

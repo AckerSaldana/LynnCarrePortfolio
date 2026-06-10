@@ -1,13 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
 import HeroFrame from '../components/frames/HeroFrame.astro';
-import ProjectFrame from '../components/frames/ProjectFrame.astro';
+import ProductCarousel from '../components/frames/ProductCarousel.astro';
 import ProjectDetail from '../components/frames/ProjectDetail.astro';
-import BouquetDetail from '../components/frames/BouquetDetail.astro';
-import IndexFrame from '../components/frames/IndexFrame.astro';
 import VisualIndex from '../components/frames/VisualIndex.astro';
 import VisualFlow from '../components/frames/VisualFlow.astro';
 import Header from '../components/ui/Header.astro';
+import LandingFrame from '../components/frames/LandingFrame.astro';
+import About from '../components/frames/About.astro';
+import Contact from '../components/frames/Contact.astro';
 
 // Proyectos (orden = frames 2,3,4...). El copy de Bouquet es del portafolio; el resto, de ejemplo.
 const projects = [
@@ -118,22 +119,18 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
 
   <div data-frames class="fixed inset-0 z-10 overflow-hidden">
     <HeroFrame />
-    <IndexFrame
-      name={profile.name}
-      location={profile.location}
-      year="2026"
-      manifesto={manifesto}
-    />
-    {projects.map((p) => <ProjectFrame title={p.title} tag={p.tag} model={p.slug} />)}
+    <About />
+    <ProductCarousel projects={projects} />
     <VisualIndex projects={visualProjects} />
+    <Contact email={profile.email} phone={profile.phone} />
   </div>
 
-  <BouquetDetail />
-  {projects.filter((p) => p.slug !== 'bouquet').map((p) => <ProjectDetail slug={p.slug} title={p.title} tag={p.tag} number={p.number} body={p.body} />)}
+  {projects.map((p) => <ProjectDetail slug={p.slug} title={p.title} tag={p.tag} number={p.number} body={p.body} />)}
   <VisualFlow projects={visualProjects} />
 
   <div class="cursor-img" data-cursor-img aria-hidden="true"><img alt="" decoding="async" /></div>
 
+  <LandingFrame />
   <Header />
 </Base>
 
@@ -165,7 +162,7 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
   import { createVisualFlow } from '../lib/visualFlow';
   import { createScene } from '../lib/three/scene';
   import { loadModel, hasModel, getModelTilt } from '../lib/three/models';
-  import { Group } from 'three';
+  import { Group, Color } from 'three';
 
   const stack = document.querySelector<HTMLElement>('[data-frames]');
   if (stack) {
@@ -219,6 +216,36 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       });
     }
 
+    // --- carrusel de producto: coverflow horizontal (sub-pasos dentro de un frame) ---
+    const carouselEl = els.find((el) => el.hasAttribute('data-carousel')) ?? null;
+    const carouselIndex = carouselEl ? els.indexOf(carouselEl) : -1;
+    const carouselModels = carouselEl?.dataset.models?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+    const labelEls = carouselEl ? [...carouselEl.querySelectorAll<HTMLElement>('[data-carousel-label]')] : [];
+    const REF_SPAN = 2;                 // span normalizado: el modelo activo, al mismo tamaño en pantalla
+    const SPACING = REF_SPAN * 1.0;     // separación 3D entre modelos contiguos (tuneable)
+    const NEIGHBOR_SCALE = 0.55;        // el modelo anterior/posterior se ve más chico (coverflow)
+    const NEIGHBOR_WASH = 0.6;          // ...y más clarito (OPACO, no translúcido): se aclara hacia el fondo
+    const PAPER = new Color('#EAEAEA'); // color del fondo hacia el que se aclara el vecino
+    let carouselToken = 0;              // descarta layouts obsoletos si entras/sales rápido
+    if (labelEls.length) gsap.set(labelEls, { xPercent: -50, yPercent: -50, autoAlpha: 0 });
+
+    // --- frames con scroll nativo propio (Sobre mí, Visual): al entrar apagamos el nav (la rueda
+    // no navega entre secciones) y disparamos su reveal; al salir se reactiva. ---
+    const aboutEl = els.find((el) => el.hasAttribute('data-about')) ?? null;
+    const aboutIndex = aboutEl ? els.indexOf(aboutEl) : -1;
+    const aboutScroll = aboutEl?.querySelector<HTMLElement>('[data-about-scroll]') ?? null;
+    const visualEl = els.find((el) => el.hasAttribute('data-visual-index')) ?? null;
+    const visualFrameIndex = visualEl ? els.indexOf(visualEl) : -1;
+    const visualScroll = visualEl?.querySelector<HTMLElement>('[data-visual-scroll]') ?? null;
+    const contactEl = els.find((el) => el.hasAttribute('data-contact')) ?? null;
+    const contactIndex = contactEl ? els.indexOf(contactEl) : -1;
+    const contactScroll = contactEl?.querySelector<HTMLElement>('[data-contact-scroll]') ?? null;
+    const scrollFrames = [
+      { idx: aboutIndex, scroll: aboutScroll, event: 'about:enter' },
+      { idx: visualFrameIndex, scroll: visualScroll, event: 'visual:enter' },
+      { idx: contactIndex, scroll: contactScroll, event: 'contact:enter' },
+    ].filter((s) => s.idx >= 0);
+
     // --- escena 3D persistente: carrusel de objetos por proyecto ---
     const canvas = document.querySelector<HTMLCanvasElement>('[data-scene]');
     const sceneHandle = canvas ? createScene(canvas) : null;
@@ -234,6 +261,32 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       pivot.rotation.z = 0;
     }
 
+    // "wash" del modelo: t=0 = activo (normal), t=1 = vecino (más clarito pero OPACO).
+    // No usamos opacidad/transparencia (eso lo veía vidrioso/rayos-x): aclaramos con emissive
+    // hacia el color del fondo, dejando el material 100% opaco.
+    function setPivotWash(pivot: Group, t: number) {
+      pivot.traverse((o: any) => {
+        if (!o.isMesh || !o.material) return;
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach((m: any) => {
+          m.transparent = false; // opaco siempre: sin ver el fondo ni el interior del modelo
+          m.opacity = 1;
+          m.depthWrite = true;
+          if (!m.emissive) return;
+          if (m.userData.__em === undefined) {
+            m.userData.__em = { hex: m.emissive.getHex(), int: m.emissiveIntensity ?? 1 };
+          }
+          if (t <= 0) {
+            m.emissive.setHex(m.userData.__em.hex); // restaura el emissive original
+            m.emissiveIntensity = m.userData.__em.int;
+          } else {
+            m.emissive.copy(PAPER); // se aclara hacia el fondo
+            m.emissiveIntensity = NEIGHBOR_WASH * t;
+          }
+        });
+      });
+    }
+
     async function ensureModel(name: string) {
       if (mounted.has(name)) return mounted.get(name) ?? null;
       const p = loadModel(name);
@@ -243,8 +296,26 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         const pivot = new Group();
         pivot.add(model);
         sceneHandle.add(pivot);
-        sceneHandle.frameObject(model); // centra el modelo dentro del pivot + acomoda cámara
-        pivot.userData.span = (model.userData.span as number | undefined) ?? 2;
+        sceneHandle.frameObject(model); // centra el modelo dentro del pivot
+        // normaliza todos los modelos al mismo span: en el coverflow conviven en una sola
+        // toma de cámara, así que deben verse de tamaño parejo sin importar la escala del .glb.
+        const span = (model.userData.span as number | undefined) ?? REF_SPAN;
+        const k = REF_SPAN / span;
+        model.scale.multiplyScalar(k);
+        model.position.multiplyScalar(k); // -center → -k·center: sigue centrado tras escalar
+        model.userData.span = REF_SPAN;
+        pivot.userData.span = REF_SPAN;
+        pivot.userData.wash = { v: 0 }; // valor animable de "aclarado" del modelo (0=activo,1=vecino)
+        // bouquet/daylights traen emissiveTexture + emissiveFactor BLANCO (pensado para
+        // multiplicarse por esa textura casi negra). Quitamos la textura para que el aclarado por
+        // emissive funcione, y ponemos el emissive base en NEGRO para que el modelo activo NO brille.
+        model.traverse((o: any) => {
+          if (!o.isMesh || !o.material) return;
+          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: any) => {
+            if (m.emissiveMap) { m.emissiveMap = null; m.needsUpdate = true; }
+            if (m.emissive) { m.emissive.setHex(0x000000); m.emissiveIntensity = 1; } // sin glow base
+          });
+        });
         pivot.rotation.x = getModelTilt(name); // inclina el pivot (eje de giro) para asomar la parte superior
         pivot.visible = false;
         // animación propia: giro lento continuo en Y, independiente del swap del pivot
@@ -254,37 +325,117 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       return mounted.get(name) ?? null;
     }
 
-    // reposo de la escena tras cada cambio de frame
-    function updateScene(index: number) {
-      if (!sceneHandle) return;
-      sceneIndex = index;
-      const activeModel = els[index]?.dataset.model;
-      // carga perezosa: trae los modelos a un frame de distancia del actual
-      [index - 1, index, index + 1].forEach((j) => {
-        const m = els[j]?.dataset.model;
-        if (hasModel(m)) ensureModel(m);
+    // solo el rótulo centrado abre el detalle; los vecinos asomados no interceptan el click
+    function setActiveLabel(step: number) {
+      labelEls.forEach((label, i) => {
+        const center = i === step;
+        label.style.pointerEvents = center ? 'auto' : 'none';
+        label.tabIndex = center ? 0 : -1;
+        label.setAttribute('aria-hidden', center ? 'false' : 'true');
       });
-      mounted.forEach((pivot, name) => {
-        pivot.visible = name === activeModel;
+    }
+
+    // rótulos DOM: el centrado grande+opaco, los vecinos pequeños+tenues, los lejanos ocultos
+    function layoutLabels(step: number, animate: boolean) {
+      labelEls.forEach((label, i) => {
+        const props = {
+          xPercent: -50,
+          yPercent: -50,
+          x: 0,
+          y: 0,
+          autoAlpha: i === step ? 1 : 0, // solo el modelo actual lleva texto, siempre centrado
+        };
+        if (animate && !reduced) gsap.to(label, { ...props, duration: 0.6, ease: 'power3.out' });
+        else gsap.set(label, props);
+      });
+      setActiveLabel(step);
+    }
+
+    // posiciona los modelos YA montados del carrusel para un sub-paso (síncrono, sin await):
+    // X de coverflow, escala y aclarado del vecino, visibles. Reutilizado en la entrada y el layout.
+    function placeCarousel(step: number) {
+      carouselModels.forEach((name, i) => {
+        const pivot = mounted.get(name);
+        if (!pivot) return;
         rest(pivot);
+        const slot = i - step;
+        const t = slot === 0 ? 0 : 1; // 0 = activo, 1 = vecino (aclarado)
+        pivot.position.x = slot * SPACING; // prev=-S, activo=0, next=+S
+        pivot.scale.setScalar(slot === 0 ? 1 : NEIGHBOR_SCALE); // vecinos más chicos
+        (pivot.userData.wash ??= { v: 0 }).v = t;
+        setPivotWash(pivot, t); // ...y más claritos (opacos)
+        pivot.rotation.x = getModelTilt(name);
+        pivot.visible = true; // todos visibles → el anterior y el posterior asoman a los lados
       });
-      sceneHandle.setActive(hasModel(activeModel));
-      if (hasModel(activeModel)) {
-        ensureModel(activeModel).then((pivot) => {
-          if (!pivot || sceneIndex !== index) return;
-          // si el modelo cargó DESPUÉS de la transición, deslízalo (no lo muestres estático)
-          if (!pivot.visible && !reduced) {
-            rest(pivot);
-            const enter = exitDist(pivot);
-            gsap.set(pivot.position, { x: 0, y: -enter, z: 0 });
-            pivot.visible = true;
-            gsap.to(pivot.position, { y: 0, duration: 0.85, ease: 'power3.out' });
-          } else {
-            rest(pivot);
-            pivot.visible = true;
-          }
-        });
-      }
+    }
+
+    // entrada al carrusel: asegura montados los tres, encuadra una sola cámara y los reparte en X
+    async function layoutCarousel(step: number) {
+      if (!sceneHandle || carouselIndex < 0) return;
+      const token = ++carouselToken;
+      await Promise.all(carouselModels.map((n) => (hasModel(n) ? ensureModel(n) : null)));
+      if (token !== carouselToken || sceneIndex !== carouselIndex) return; // entrada superada
+      // si los modelos cargaron lento y el usuario ya avanzó, usa el sub-paso vigente
+      const liveStep = nav.index === carouselIndex ? nav.step : step;
+      sceneHandle.frameToSpan(REF_SPAN); // una sola distancia de cámara para los tres
+      placeCarousel(liveStep);
+      sceneHandle.setActive(true);
+      layoutLabels(liveStep, false);
+    }
+
+    function hideCarousel() {
+      carouselModels.forEach((n) => { const p = mounted.get(n); if (p) p.visible = false; });
+      sceneHandle?.setActive(false);
+    }
+
+    // re-asegura el aclarado de cada modelo según el sub-paso vigente (estado final correcto)
+    function applyCarouselWash(step: number) {
+      carouselModels.forEach((name, i) => {
+        const pivot = mounted.get(name);
+        if (!pivot) return;
+        const t = i - step === 0 ? 0 : 1; // 0 = activo (normal), 1 = vecino (aclarado)
+        (pivot.userData.wash ??= { v: 0 }).v = t;
+        setPivotWash(pivot, t);
+      });
+    }
+
+    // ruleta horizontal dentro del frame: cada notch desliza el rig 3D y los rótulos de lado a lado.
+    // dur ~0 en reduced-motion (instantáneo pero con duración real, para no romper el onComplete del Observer).
+    function rotate(_frame: FrameRef, from: number, to: number, _dir: 1 | -1) {
+      const tl = gsap.timeline();
+      const dur = reduced ? 0.001 : 0.7;
+      carouselModels.forEach((name, i) => {
+        const pivot = mounted.get(name);
+        if (!pivot) return;
+        const slot = i - to;
+        const sc = slot === 0 ? 1 : NEIGHBOR_SCALE; // crece al centrarse, encoge al salir
+        const toT = slot === 0 ? 0 : 1; // el activo normal, los vecinos aclarados (opacos)
+        const wash = (pivot.userData.wash ??= { v: 0 });
+        const fromT = wash.v;
+        tl.to(pivot.position, { x: slot * SPACING, duration: dur, ease: 'power3.inOut' }, 0);
+        // el aclarado viaja con la MISMA tween de escala (que siempre corre), no en una aparte
+        tl.to(pivot.scale, {
+          x: sc, y: sc, z: sc, duration: dur, ease: 'power3.inOut',
+          onUpdate: function () {
+            wash.v = fromT + (toT - fromT) * this.progress();
+            setPivotWash(pivot, wash.v);
+          },
+        }, 0);
+      });
+      // rótulos: crossfade secuencial, sin movimiento — el saliente se desvanece y DESPUÉS aparece
+      // el entrante (centrados), así nunca se superponen dos palabras ni se siente "clunky".
+      labelEls.forEach((label, i) => {
+        if (i === to) {
+          if (reduced) { tl.set(label, { autoAlpha: 1 }, 0); return; }
+          tl.to(label, { autoAlpha: 1, duration: dur * 0.5, ease: 'power2.out' }, dur * 0.5);
+        } else if (i === from) {
+          tl.to(label, { autoAlpha: 0, duration: reduced ? 0.001 : dur * 0.5, ease: 'power2.in' }, 0);
+        } else {
+          tl.set(label, { autoAlpha: 0 }, 0);
+        }
+      });
+      tl.call(() => setActiveLabel(to));
+      return tl;
     }
 
     // Swap: objeto y texto se mueven como una sola pieza — el saliente se desliza fuera con el
@@ -294,7 +445,10 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       const tl = gsap.timeline();
       const fromPivot = from.dataset.model ? mounted.get(from.dataset.model) : undefined;
       const toPivot = to.dataset.model ? mounted.get(to.dataset.model) : undefined;
-      if (sceneHandle && (fromPivot || toPivot)) sceneHandle.setActive(true);
+      const fromCarousel = from.hasAttribute('data-carousel');
+      const toCarousel = to.hasAttribute('data-carousel');
+      const enterStep = dir === 1 ? 0 : Number(to.dataset.steps) || 0; // step de entrada al carrusel
+      if (sceneHandle && (fromPivot || toPivot || fromCarousel || toCarousel)) sceneHandle.setActive(true);
 
       if (reduced) {
         gsap.set(to, { yPercent: 0, autoAlpha: 0 });
@@ -306,6 +460,11 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
           rest(toPivot);
           tl.set(toPivot, { visible: true }, 0);
         }
+        if (toCarousel && sceneHandle) {
+          sceneHandle.frameToSpan(REF_SPAN);
+          placeCarousel(enterStep); // los modelos ya están en su sitio al aparecer el frame
+          layoutLabels(enterStep, false);
+        }
         return tl;
       }
 
@@ -315,12 +474,37 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         .set(from, { autoAlpha: 0, yPercent: 0 }, 0.6)
         .to(to, { yPercent: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
 
+      // carrusel entrante: coloca los modelos (ya montados) y los desliza en Y JUNTO con el frame —
+      // así aparecen DURANTE el flip, no un segundo después (cuando recién corría onChange).
+      if (toCarousel && sceneHandle) {
+        sceneHandle.frameToSpan(REF_SPAN);
+        placeCarousel(enterStep);
+        carouselModels.forEach((name) => {
+          const pivot = mounted.get(name);
+          if (!pivot) return;
+          const enter = exitDist(pivot);
+          gsap.set(pivot.position, { y: -enter * dir }); // fuera de cuadro, mismo lado que el frame
+          tl.to(pivot.position, { y: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
+        });
+        layoutLabels(enterStep, false);
+      }
+
       // objeto saliente: se va con el MISMO gesto que el texto (mismo lado, ease y tiempo)
       if (fromPivot) {
         rest(fromPivot);
         const exit = exitDist(fromPivot);
         tl.to(fromPivot.position, { y: exit * dir, duration: 0.6, ease: 'power2.in' }, 0)
           .set(fromPivot, { visible: false }, 0.6);
+      }
+      // carrusel saliente: los tres modelos salen verticalmente junto al frame
+      if (fromCarousel) {
+        carouselModels.forEach((name) => {
+          const pivot = mounted.get(name);
+          if (!pivot || !pivot.visible) return;
+          const exit = exitDist(pivot);
+          tl.to(pivot.position, { y: exit * dir, duration: 0.6, ease: 'power2.in' }, 0)
+            .set(pivot, { visible: false }, 0.6);
+        });
       }
       // objeto entrante: entra como el texto — fuera de cuadro del mismo lado y se desliza
       // a reposo con idéntico ease/duración/tiempo. Nunca se ve estático "apareciendo".
@@ -334,24 +518,100 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       return tl;
     }
 
+    let prevIndex = -1;
+    let navReady = false; // evita tocar `nav` en el emit síncrono inicial (TDZ)
     const nav = createFrameNavigator({
       frames,
       transition,
-      onChange: (index) => {
-        updateScene(index);
+      rotate,
+      onChange: (index, step) => {
+        const entered = index !== prevIndex;
+        const fromContact = entered && prevIndex === contactIndex; // antes de pisar prevIndex
+        prevIndex = index;
+        sceneIndex = index;
+        if (index === carouselIndex) {
+          if (entered) layoutCarousel(step); // monta + reparte en X + cámara + activa render
+          else { setActiveLabel(step); applyCarouselWash(step); } // re-asegura aclarado del sub-paso
+        } else {
+          hideCarousel();
+        }
+        // frames con scroll propio: al entrar apaga el nav (scroll nativo) + dispara su reveal;
+        // al salir hacia un frame normal, lo reactiva.
+        if (navReady) {
+          const sf = scrollFrames.find((s) => s.idx === index);
+          if (sf) {
+            nav.disable();
+            if (entered) {
+              if (sf.scroll) sf.scroll.scrollTop = 0;
+              window.dispatchEvent(new Event(sf.event));
+            }
+          } else if (!landingOpen && !detailOpen) {
+            nav.enable();
+          }
+          // contacto: dispara su reveal también en la reentrada vía jumpTo desde la portada
+          // (mismo índice, sin "entered"). El primer enter ya lo cubre el flip normal.
+          if (index === contactIndex && !entered) window.dispatchEvent(new Event('contact:enter'));
+          void fromContact;
+        }
         if (index === ixIndex && !ixRevealed) {
           ixRevealed = true;
           ixReveal?.restart();
         }
       },
     });
+    navReady = true;
+
+    // --- portada (landing): overlay sin scroll; se sale por el nav del Header ---
+    const headerEl = document.querySelector<HTMLElement>('[data-header]');
+    const landingEl = document.querySelector<HTMLElement>('[data-landing]');
+    let landingOpen = !!landingEl;
+    if (landingEl) {
+      headerEl?.classList.add('is-on-landing');
+      nav.disable(); // arranca congelado: en la portada, wheel/teclado no navegan
+    }
+    function dismissLanding() {
+      if (!landingEl || !landingOpen) return;
+      landingOpen = false;
+      headerEl?.classList.remove('is-on-landing');
+      gsap.to(landingEl, {
+        autoAlpha: 0,
+        duration: reduced ? 0.2 : 0.6,
+        ease: 'power3.in',
+        onComplete: () => { landingEl.style.display = 'none'; },
+      });
+      nav.enable();
+    }
+    function showLanding() {
+      if (!landingEl || landingOpen) return;
+      landingOpen = true;
+      // la portada tapa el frame sin cambiar de índice: avisa al colofón para que pause su caret
+      if (nav.index === contactIndex) window.dispatchEvent(new Event('contact:leave'));
+      landingEl.style.display = '';
+      headerEl?.classList.add('is-on-landing');
+      nav.disable();
+      // reinicia la animación CSS del titular (la del primer pintado no se repite sola)
+      landingEl.querySelectorAll<HTMLElement>('.landing__line-inner').forEach((ln) => {
+        ln.style.animation = 'none'; void ln.offsetWidth; ln.style.animation = '';
+      });
+      // NO hacemos goTo(0): la portada tapa el frame de fondo, y un goTo aquí deja el nav "animating"
+      // ~1.3s, lo que bloqueaba el goTo del siguiente clic (p.ej. "sobre mí" se quedaba en el selector).
+      gsap.fromTo(landingEl, { autoAlpha: 0 }, { autoAlpha: 1, duration: reduced ? 0.2 : 0.5, ease: 'power3.out' });
+    }
 
     let detailOpen = false;
+
+    // deja el nav en el estado correcto según el frame actual (apagado en portada/detalle/frames
+    // con scroll propio; encendido en el resto). Lo usa el flujo visual al cerrarse.
+    function syncNavForCurrentFrame() {
+      if (landingOpen || detailOpen) { nav.disable(); return; }
+      if (scrollFrames.some((s) => s.idx === nav.index)) nav.disable();
+      else nav.enable();
+    }
 
     // Flujo de proyectos visuales: overlay con su propio Observer; pausa el nav principal.
     const flowEl = document.querySelector<HTMLElement>('[data-visual-flow]');
     const flow = flowEl
-      ? createVisualFlow({ root: flowEl, reduced, onOpen: () => nav.disable(), onClose: () => nav.enable() })
+      ? createVisualFlow({ root: flowEl, reduced, onOpen: () => nav.disable(), onClose: () => syncNavForCurrentFrame() })
       : null;
 
     // Header + categorías del hero: cada control con data-nav-target salta a su frame.
@@ -359,9 +619,39 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       el.addEventListener('click', () => {
         const t = el.dataset.navTarget;
         if (!t) return; // stub: sección por construir
-        nav.goTo(Number(t));
+        if (detailOpen) closeDetail(); // si hay un detalle de producto abierto, ciérralo al navegar
+        if (landingOpen) {
+          // desde la portada: salto INSTANTÁNEO (no se ve el flip desde el selector) + funde la portada
+          dismissLanding();
+          nav.jumpTo(Number(t));
+        } else {
+          nav.goTo(Number(t)); // dentro del sitio: flip normal entre secciones
+        }
       });
     });
+    // wordmark del Header y el botón FIN del colofón → vuelven a la portada
+    document.querySelectorAll<HTMLElement>('[data-landing-home]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (detailOpen) closeDetail();
+        showLanding();
+      }),
+    );
+
+    // reacomoda el carrusel al redimensionar (separación y rótulos dependen del ancho)
+    let carouselResizeT = 0;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(carouselResizeT);
+      carouselResizeT = window.setTimeout(() => {
+        if (nav.index === carouselIndex) layoutCarousel(nav.step);
+      }, 150);
+    });
+
+    // Precarga en segundo plano: monta los .glb del carrusel mientras el navegador está ocioso
+    // (estando en el landing/selector), para que "Producto" no espere la descarga/parseo la 1ª vez.
+    // Quedan invisibles y sin render (setActive sigue false) hasta entrar al carrusel.
+    const warmCarousel = () => carouselModels.forEach((n) => { if (hasModel(n)) ensureModel(n); });
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warmCarousel, { timeout: 2500 });
+    else window.setTimeout(warmCarousel, 1200);
 
     // --- imagen que sigue al cursor al pasar por el título de un proyecto ---
     const cursorImg = document.querySelector<HTMLElement>('[data-cursor-img]');
@@ -395,8 +685,8 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       nav.disable();
       const sc = el.querySelector<HTMLElement>('[data-detail-scroll]');
       if (sc) sc.scrollTop = 0;
-      el.setAttribute('aria-hidden', 'false');
-      gsap.fromTo(el, { autoAlpha: 0, y: reduced ? 0 : 24 }, { autoAlpha: 1, y: 0, duration: reduced ? 0.2 : 0.6, ease: 'power3.out' });
+      el.setAttribute('aria-hidden', 'false'); // dispara la entrada escalonada del contenido (ProjectDetail)
+      gsap.fromTo(el, { autoAlpha: 0 }, { autoAlpha: 1, duration: reduced ? 0.2 : 0.55, ease: 'power2.out' });
       el.focus();
     }
     function closeDetail() {

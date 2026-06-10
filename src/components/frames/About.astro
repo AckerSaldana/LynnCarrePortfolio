@@ -1,0 +1,451 @@
+---
+import { Image, getImage } from 'astro:assets';
+import portrait from '../../assets/Aylinn.jpg';
+import bouquetSrc from '../../assets/projects/bouquet.png';
+import biznagaSrc from '../../assets/projects/biznaga.png';
+import daylightsSrc from '../../assets/projects/daylights.png';
+import salmonSrc from '../../assets/projects/salmon.png';
+import betterwareSrc from '../../assets/projects/betterware.png';
+
+// imágenes optimizadas para el hover de la lista de exposiciones (estilo "media highlights")
+const exSrc = async (src: ImageMetadata) => (await getImage({ src, width: 760, format: 'webp' })).src;
+const ex = {
+  bouquet: await exSrc(bouquetSrc),
+  biznaga: await exSrc(biznagaSrc),
+  daylights: await exSrc(daylightsSrc),
+  salmon: await exSrc(salmonSrc),
+  betterware: await exSrc(betterwareSrc),
+};
+
+// "Sobre mí": FRAME del stack (sustituye al antiguo IndexFrame), no es overlay. Se llega por el
+// Header (goTo) y solo se scrollea AQUÍ — el nav de fondo se apaga al entrar (index.astro) para que
+// el scroll sea nativo dentro del frame, y no se pueda navegar a otra sección con la rueda.
+// Tema claro del sitio. Copy 100% del CV + infoproyectos.md (nada inventado).
+
+const intro = ['Aylinn Carré es una', 'diseñadora industrial y', 'visual apasionada por el', 'arte y las industrias creativas.'];
+
+const bio = [
+  { h: 'Entre disciplinas', p: 'Formada en el Tecnológico de Monterrey y con un intercambio en la Universidad de Los Andes, en Bogotá, Aylinn se mueve con naturalidad entre el diseño industrial y el diseño visual.' },
+  { h: 'Diseño con intención', p: 'Su proceso parte de la introspección y el contexto: un florero que nace de la rutina de cambiarle el agua a un ramo; una familia de productos inspirada en una planta endémica del norte de México.' },
+  { h: 'Forma e identidad', p: 'Lo mismo da forma a un objeto que construye la identidad de una marca. Cada proyecto une función, sensibilidad y una historia que vale la pena contar.' },
+  { h: 'Presencia internacional', p: 'Su trabajo se ha exhibido en Nueva York, Milán, Ciudad de México y Monterrey, y ha sido publicado en medios como Dezeen, Design Milk y Designaholic.' },
+];
+
+const experiencia = [
+  { when: 'Feb 2026 — Actualidad', role: 'On Campus Intern', org: 'Instituto de Emprendimiento EGL' },
+  { when: 'Ago — Dic 2025', role: 'Design Intern', org: 'Restaurante Cocina Habibi' },
+  { when: 'Feb 2024 — Jul 2025', role: 'On Campus Intern · Comunicación', org: 'Escuela de Ingeniería y Ciencias, Tec de Monterrey' },
+  { when: 'Ago 2023 — Actualidad', role: 'Staff técnico, producción y diseño', org: 'Auditorio Luis Elizondo, Tec de Monterrey' },
+];
+
+const educacion = [
+  { when: 'Ago 2022 — Jul 2026', role: 'Lic. en Diseño', org: 'Tecnológico de Monterrey' },
+  { when: 'Ago — Dic 2025', role: 'Intercambio internacional', org: 'Universidad de Los Andes, Bogotá, Colombia' },
+];
+
+const reconocimientos = [
+  { year: '2025', what: 'HORIZONTES', where: 'Lucerna 32, CDMX', img: ex.bouquet },
+  { year: '2025', what: 'Wanted Design / ICFF', where: 'Nueva York, EE. UU.', img: ex.daylights },
+  { year: '2025', what: 'BASE — Milano Design Week', where: 'Milán, Italia', img: ex.biznaga },
+  { year: '2025', what: 'Taller «Immersive Objects for Hybrid Living»', where: 'con Kevin Henry', img: ex.daylights },
+  { year: '2024', what: 'Museo MARCO', where: 'Monterrey, México', img: ex.bouquet },
+  { year: '2024', what: 'Taller «From Object to Context»', where: 'con Maya Kopytman y Gabriela Mirensky', img: ex.salmon },
+  { year: '2024', what: 'Diseñadora Destacada', where: 'Betterware Design Lab', img: ex.betterware },
+  { year: '2024', what: 'Wanted Design / ICFF', where: 'Nueva York, EE. UU.', img: ex.bouquet },
+  { year: '2024', what: 'Taller «Plant-Based»', where: 'con Henry Julier', img: ex.bouquet },
+];
+
+const habilidades = ['Liderazgo', 'Creatividad', 'Adaptabilidad', 'Eficiencia', 'Atención a los detalles', 'Perseverancia'];
+const software = ['Photoshop', 'Illustrator', 'Lightroom', 'InDesign', 'Figma', 'Canva', 'CapCut', 'Fusion 360', 'AutoCAD', 'SketchUp', 'KeyShot'];
+const idiomas = ['Español — nativo', 'Inglés — avanzado', 'Francés — básico'];
+---
+
+<section data-frame data-about data-tag="sobre mí" data-steps="0" class="about">
+  <div class="about__scroll" data-about-scroll>
+    <!-- 1 · Intro -->
+    <section class="about__intro">
+      <span class="about__kicker">Sobre mí</span>
+      <h1 class="about__lead">
+        {intro.map((line) => (
+          <span class="about__lead-line"><span class="about__lead-inner" data-about-line>{line}</span></span>
+        ))}
+      </h1>
+    </section>
+
+    <!-- 2 · Bio editorial: bloques agrupados en dos columnas + retrato -->
+    <section class="about__bio" data-about-reveal>
+      <div class="about__bio-text">
+        {bio.map((b) => (
+          <div class="about__block">
+            <h2 class="about__h">{b.h}</h2>
+            <p>{b.p}</p>
+          </div>
+        ))}
+      </div>
+      <figure class="about__portrait">
+        <Image src={portrait} alt="Retrato de Aylinn Carré" widths={[520, 780, 1040]} sizes="(max-width: 900px) 80vw, 40vw" />
+      </figure>
+    </section>
+
+    <!-- 3 · Trayectoria -->
+    <section class="about__section" data-about-reveal>
+      <h2 class="about__title">Trayectoria</h2>
+      <div class="about__cv">
+        <div class="about__cv-col">
+          <h3 class="about__sub">Experiencia</h3>
+          <ul class="about__list">
+            {experiencia.map((e) => (
+              <li class="about__item">
+                <span class="about__when">{e.when}</span>
+                <span class="about__role">{e.role}</span>
+                <span class="about__org">{e.org}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="about__cv-col">
+          <h3 class="about__sub">Educación</h3>
+          <ul class="about__list">
+            {educacion.map((e) => (
+              <li class="about__item">
+                <span class="about__when">{e.when}</span>
+                <span class="about__role">{e.role}</span>
+                <span class="about__org">{e.org}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · Exposiciones & reconocimientos -->
+    <section class="about__section" data-about-reveal>
+      <h2 class="about__title">Exposiciones & reconocimientos</h2>
+      <div class="about__media" data-about-media>
+        <ul class="about__media-list">
+          {reconocimientos.map((r) => (
+            <li class="about__row" data-ex-img={r.img}>
+              <span class="about__year">{r.year}</span>
+              <span class="about__rowcontent">
+                <span class="about__what">{r.what}</span>
+                <span class="about__where">{r.where}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <span class="about__exlayer" aria-hidden="true"><img alt="" decoding="async" /></span>
+        <span class="about__exlayer" aria-hidden="true"><img alt="" decoding="async" /></span>
+      </div>
+      <p class="about__pubs">Publicada en <em>Dezeen</em> · <em>Design Milk</em> · <em>Designaholic</em> · <em>a! Diseño</em> · <em>Revista Ambientes</em></p>
+    </section>
+
+    <!-- 5 · Habilidades / Software / Idiomas -->
+    <section class="about__section about__skills" data-about-reveal>
+      <div class="about__skill">
+        <h3 class="about__sub">Habilidades</h3>
+        <ul class="about__tags">{habilidades.map((s) => <li>{s}</li>)}</ul>
+      </div>
+      <div class="about__skill">
+        <h3 class="about__sub">Software</h3>
+        <ul class="about__tags">{software.map((s) => <li>{s}</li>)}</ul>
+      </div>
+      <div class="about__skill">
+        <h3 class="about__sub">Idiomas</h3>
+        <ul class="about__tags">{idiomas.map((s) => <li>{s}</li>)}</ul>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+  .about { position: absolute; inset: 0; background: var(--paper); color: var(--ink); }
+
+  .about__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(4rem, 12vh, 9rem);
+  }
+
+  /* 1 · Intro */
+  .about__intro {
+    min-height: clamp(54vh, 74vh, 80vh);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: clamp(2rem, 6vh, 4rem);
+  }
+  .about__kicker {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(0.8rem, 1vw, 0.95rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: clamp(1.2rem, 3vh, 2.4rem);
+  }
+  .about__lead {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    font-size: clamp(2.2rem, 6.4vw, 6rem);
+    max-width: 18ch;
+  }
+  .about__lead-line { display: block; overflow: hidden; padding-bottom: 0.06em; }
+  .about__lead-inner { display: block; will-change: transform; }
+
+  /* 2 · Bio editorial */
+  .about__bio {
+    display: grid;
+    grid-template-columns: 1.45fr 0.95fr;
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: stretch;
+    padding: clamp(3rem, 9vh, 7rem) 0;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+  /* los bloques fluyen en dos columnas apretadas (estilo editorial) */
+  .about__bio-text {
+    column-count: 2;
+    column-gap: clamp(1.4rem, 2.4vw, 2.6rem);
+  }
+  .about__block {
+    break-inside: avoid;
+    margin-bottom: clamp(1.6rem, 3vh, 2.4rem);
+  }
+  .about__block:last-child { margin-bottom: 0; }
+  .about__h {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+    letter-spacing: -0.01em;
+  }
+  .about__block p {
+    margin: 0;
+    font-size: clamp(0.96rem, 1.1vw, 1.12rem);
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--ink) 80%, var(--paper));
+  }
+  .about em { font-style: italic; color: var(--blue); }
+  .about__portrait { margin: 0; align-self: stretch; }
+  .about__portrait :global(img) {
+    width: 100%;
+    height: 100%;
+    min-height: clamp(320px, 52vh, 620px);
+    display: block;
+    object-fit: cover;
+    border-radius: 2px;
+  }
+
+  /* secciones */
+  .about__section {
+    padding: clamp(3rem, 9vh, 7rem) 0;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+  .about__title {
+    margin: 0 0 clamp(1.8rem, 4vh, 3rem);
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-size: clamp(2rem, 5vw, 4.5rem);
+  }
+  .about__sub {
+    margin: 0 0 1.2rem;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(0.8rem, 1vw, 0.95rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--blue);
+  }
+
+  /* 3 · Trayectoria */
+  .about__cv { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 5rem); }
+  .about__list { list-style: none; margin: 0; padding: 0; }
+  .about__item {
+    display: grid;
+    gap: 0.15rem;
+    padding: 1.1rem 0;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  }
+  .about__item:first-child { border-top: 0; padding-top: 0; }
+  .about__when { font-size: 0.82rem; letter-spacing: 0.04em; color: var(--blue); font-weight: 700; }
+  .about__role { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.05rem, 1.5vw, 1.4rem); }
+  .about__org { font-size: clamp(0.92rem, 1.1vw, 1.05rem); color: color-mix(in srgb, var(--ink) 65%, var(--paper)); }
+
+  /* 4 · Media list — año a la izq, contenido a la der, hueco al centro para la imagen al hover */
+  .about__media { position: relative; }
+  .about__media-list { list-style: none; margin: 0; padding: 0; }
+  .about__row {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: clamp(1rem, 3vw, 3rem);
+    align-items: center;
+    padding: clamp(1.1rem, 2.6vh, 1.7rem) 0;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+    transition: opacity 0.35s ease;
+  }
+  .about__row:last-child { border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); }
+  .about__rowcontent { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 0.2rem; }
+  .about__year { font-size: 0.9rem; font-weight: 700; color: color-mix(in srgb, var(--ink) 55%, var(--paper)); }
+  .about__what {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(1.1rem, 1.9vw, 1.7rem); letter-spacing: -0.01em;
+    transition: color 0.3s ease;
+  }
+  .about__where { font-size: clamp(0.9rem, 1.1vw, 1.05rem); color: color-mix(in srgb, var(--ink) 60%, var(--paper)); }
+  /* al pasar por una fila: las demás se atenúan y la imagen aparece (como la referencia) */
+  .about__media.is-hovering .about__row { opacity: 0.4; }
+  .about__media.is-hovering .about__row:hover { opacity: 1; }
+  .about__row:hover .about__what { color: var(--blue); }
+
+  /* dos cajas de preview INDEPENDIENTES (cada una con su propia posición): la que SALE se queda en
+     su fila colapsando hacia la izquierda; la NUEVA aparece ya en la fila nueva, revelando desde la
+     izquierda. Ambas a la vez. --exr recorta por la derecha (0 = visible, 100 = oculto). */
+  .about__exlayer {
+    position: absolute;
+    left: 7%;
+    top: 0;
+    width: clamp(220px, 27%, 440px);
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 2;
+    background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+    clip-path: inset(0 var(--exr, 100%) 0 0);
+    will-change: clip-path;
+  }
+  .about__exlayer img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .about__pubs {
+    margin: clamp(1.6rem, 4vh, 2.6rem) 0 0;
+    font-size: clamp(0.95rem, 1.2vw, 1.2rem);
+    color: color-mix(in srgb, var(--ink) 70%, var(--paper));
+  }
+
+  /* 5 · Skills */
+  .about__skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(2rem, 5vw, 5rem); }
+  .about__tags { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .about__tags li { font-size: clamp(0.98rem, 1.2vw, 1.2rem); }
+
+  /* reveal al hacer scroll dentro del frame */
+  [data-about-reveal] {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0, 1);
+  }
+  [data-about-reveal].is-in { opacity: 1; transform: none; }
+
+  @media (max-width: 900px) {
+    .about__bio { grid-template-columns: 1fr; }
+    .about__bio-text { column-count: 1; }
+    .about__portrait { order: -1; max-width: 460px; }
+    .about__portrait :global(img) { min-height: clamp(280px, 44vh, 480px); }
+    .about__cv,
+    .about__skills { grid-template-columns: 1fr; gap: 2.4rem; }
+    .about__row { grid-template-columns: 3.5rem 1fr; }
+    .about__rowcontent { align-items: flex-start; text-align: left; }
+    .about__exlayer { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about__lead-inner { transform: none !important; }
+    [data-about-reveal] { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  const root = document.querySelector<HTMLElement>('[data-about]');
+  if (root) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scroller = root.querySelector<HTMLElement>('[data-about-scroll]');
+    const reveals = [...root.querySelectorAll<HTMLElement>('[data-about-reveal]')];
+    const leadLines = [...root.querySelectorAll<HTMLElement>('[data-about-line]')];
+    let io: IntersectionObserver | null = null;
+    let introPlayed = false;
+
+    if (!reduced && leadLines.length) gsap.set(leadLines, { yPercent: 115 }); // pre-ocultas tras su máscara
+
+    function buildReveal() {
+      if (io || reduced) { if (reduced) reveals.forEach((r) => r.classList.add('is-in')); return; }
+      io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add('is-in'); io?.unobserve(e.target); }
+        }),
+        { root: scroller, threshold: 0.14 },
+      );
+      reveals.forEach((r) => io!.observe(r));
+    }
+
+    // El intro se anima UNA sola vez (en la primera entrada). Al volver, las letras ya están a la
+    // vista y no se repite la animación.
+    function playIntro() {
+      if (reduced || introPlayed || !leadLines.length) return;
+      introPlayed = true;
+      gsap.fromTo(leadLines, { yPercent: 115 }, { yPercent: 0, duration: 1.05, ease: 'power4.out', stagger: 0.1 });
+    }
+
+    // index.astro dispara 'about:enter' al navegar a este frame: animamos el intro y armamos el reveal.
+    window.addEventListener('about:enter', () => { playIntro(); buildReveal(); });
+
+    // hover de la lista de exposiciones: dos cajas independientes (atenúa el resto). La que SALE se
+    // queda en su fila colapsando; la NUEVA aparece YA en la fila nueva. Ambas animan a la vez.
+    const media = root.querySelector<HTMLElement>('[data-about-media]');
+    const exLayers = media ? [...media.querySelectorAll<HTMLElement>('.about__exlayer')] : [];
+    const exImgs = exLayers.map((l) => l.querySelector('img'));
+    if (media && exLayers.length === 2 && exImgs[0] && exImgs[1]) {
+      const exRows = [...media.querySelectorAll<HTMLElement>('.about__row[data-ex-img]')];
+      const states = exLayers.map(() => ({ r: 100 })); // recorte derecho en % (100 oculto, 0 visible)
+      let active = 0;
+      let exShown = false;
+      let curRow: HTMLElement | null = null;
+      const DUR = 0.6;
+      const apply = (i: number) => exLayers[i].style.setProperty('--exr', states[i].r + '%');
+      const setR = (i: number, r: number) => { states[i].r = r; apply(i); };
+      const tweenR = (i: number, r: number) => {
+        gsap.killTweensOf(states[i]);
+        if (reduced) { setR(i, r); return; }
+        gsap.to(states[i], { r, duration: DUR, ease: 'power2.inOut', onUpdate: () => apply(i) });
+      };
+      const positionLayer = (i: number, row: HTMLElement) => {
+        const h = exLayers[i].offsetHeight;
+        const top = row.offsetTop + row.offsetHeight / 2 - h / 2;
+        exLayers[i].style.top = `${Math.max(0, Math.min(top, media.offsetHeight - h))}px`;
+      };
+      exRows.forEach((row) => {
+        row.addEventListener('mouseenter', () => {
+          const src = row.dataset.exImg;
+          if (!src || row === curRow) return;
+          curRow = row;
+          media.classList.add('is-hovering');
+          if (!exShown) {
+            exShown = true; active = 0;
+            (exImgs[0] as HTMLImageElement).src = src;
+            setR(0, 100); setR(1, 100);
+            positionLayer(0, row);
+            tweenR(0, 0); // revela desde la izquierda en su fila
+          } else {
+            const old = active, nw = 1 - active;
+            tweenR(old, 100);                          // la actual se QUEDA en su fila y colapsa a la izq
+            (exImgs[nw] as HTMLImageElement).src = src;
+            setR(nw, 100);
+            positionLayer(nw, row);                    // la nueva ya en la fila nueva
+            tweenR(nw, 0);                             // revela desde la izquierda, a la vez
+            active = nw;
+          }
+        });
+      });
+      media.addEventListener('mouseleave', () => {
+        media.classList.remove('is-hovering');
+        if (exShown) { exShown = false; curRow = null; tweenR(active, 100); }
+      });
+    }
+  }
+</script>

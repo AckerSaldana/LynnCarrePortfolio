@@ -1,41 +1,48 @@
 ---
 import { Image } from 'astro:assets';
-import productoImg from '../../assets/projects/bouquet/2.png';
-import visualImg from '../../assets/projects/tito.png';
+import bouquetImg from '../../assets/projects/bouquet/bouquet-nobg.png';
+import titoImg from '../../assets/projects/tito-no-bg.png';
 
-// Frame 0 del stack. Contrato del Observer: data-frame + data-steps="0".
-// Dos categorías de entrada: producto (diseño industrial) y visual (diseño visual).
-// data-nav-target = índice del frame destino; vacío = stub (sección por construir).
+// Frame 0 del stack = la página "Proyectos": selector de categoría.
+// Contrato del Observer: data-frame + data-steps="0". Mantiene data-hero (exención de
+// pre-pintado en global.css). Dos columnas centradas (recorte sin fondo SOBRE su palabra):
+// producto (carrusel, frame 2) y visual (índice visual, frame 3).
+// data-nav-target = índice del frame destino. Click en palabra o recorte navega.
 ---
 
 <section data-frame data-hero data-tag="portada" data-steps="0" class="hero">
   <div class="hero__stage" data-hero-stage>
-    <span class="hero__rect hero__rect--a" data-parallax data-depth="0.5" data-cat="producto" data-nav-target="2" aria-hidden="true">
-      <Image class="hero__rect-img" src={productoImg} alt="" widths={[480, 768, 1024]} sizes="42vw" />
-    </span>
-    <span class="hero__rect hero__rect--b" data-parallax data-depth="0.8" data-cat="visual" data-nav-target="5" aria-hidden="true">
-      <Image class="hero__rect-img" src={visualImg} alt="" widths={[480, 768, 1024]} sizes="42vw" />
-    </span>
+    <!-- PRODUCTO: recorte (bouquet) centrado sobre la palabra -->
+    <div class="hero__cat hero__cat--producto">
+      <span class="hero__cut" data-parallax data-depth="0.6" data-cat="producto" data-nav-target="2" aria-hidden="true">
+        <Image class="hero__cut-img" src={bouquetImg} alt="" widths={[320, 480, 640]} sizes="(max-width: 720px) 60vw, 24vw" />
+      </span>
+      <button
+        class="hero__word"
+        type="button"
+        data-cat="producto"
+        data-nav-target="2"
+        data-parallax
+        data-depth="1"
+        aria-label="Ver proyectos de producto"
+      ><span class="hero__word-inner">producto</span></button>
+    </div>
 
-    <button
-      class="hero__word hero__word--producto"
-      type="button"
-      data-cat="producto"
-      data-nav-target="2"
-      data-parallax
-      data-depth="1"
-      aria-label="Ver proyectos de producto"
-    ><span class="hero__word-inner">producto</span></button>
-
-    <button
-      class="hero__word hero__word--visual"
-      type="button"
-      data-cat="visual"
-      data-nav-target="5"
-      data-parallax
-      data-depth="1.2"
-      aria-label="Ver proyectos visuales"
-    ><span class="hero__word-inner">visual</span></button>
+    <!-- VISUAL: recorte (tito) centrado sobre la palabra -->
+    <div class="hero__cat hero__cat--visual">
+      <span class="hero__cut" data-parallax data-depth="0.6" data-cat="visual" data-nav-target="3" aria-hidden="true">
+        <Image class="hero__cut-img" src={titoImg} alt="" widths={[320, 480, 640]} sizes="(max-width: 720px) 60vw, 26vw" />
+      </span>
+      <button
+        class="hero__word"
+        type="button"
+        data-cat="visual"
+        data-nav-target="3"
+        data-parallax
+        data-depth="1.1"
+        aria-label="Ver proyectos visuales"
+      ><span class="hero__word-inner">visual</span></button>
+    </div>
   </div>
 </section>
 
@@ -52,71 +59,78 @@ import visualImg from '../../assets/projects/tito.png';
     inset: 0;
   }
 
-  .hero__rect {
+  /* cada categoría es una columna centrada: recorte arriba, palabra debajo, mismo eje.
+     translateX(-50%) la centra sobre el punto `left` → la imagen queda centrada sobre su palabra. */
+  .hero__cat {
     position: absolute;
-    overflow: hidden;
-    background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+    top: 14%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateX(-50%);
+  }
+  /* simétricos respecto al centro (28% y 72%) */
+  .hero__cat--producto { left: 28%; }
+  .hero__cat--visual   { left: 72%; }
+
+  /* recorte sin fondo: caja de altura fija para que ambas palabras queden a la misma base */
+  .hero__cut {
+    height: 52vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    will-change: transform, clip-path;
+    will-change: transform;
   }
-  .hero__rect--a { left: 13%; top: 20%;  width: 30%; height: 42%; }
-  .hero__rect--b { left: 57%; top: 42%;  width: 30%; height: 42%; }
-
-  .hero__rect-img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0, 1);
+  .hero__cut-img {
+    display: block;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    max-width: 36vw;
+    object-fit: contain;
+    filter: drop-shadow(0 16px 36px color-mix(in srgb, var(--ink) 15%, transparent));
   }
-
-  /* recuadro azul por defecto; el hover funde el velo y revela el proyecto */
-  .hero__rect::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--blue);
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-  }
-  .hero__rect.is-hover::after { opacity: 0; }
-  .hero__rect.is-hover .hero__rect-img { transform: scale(1.05); }
+  /* tito un poco más abajo que bouquet (no mueve la palabra: la caja conserva su alto) */
+  .hero__cat--visual .hero__cut-img { transform: translateY(6vh); }
 
   .hero__word {
     appearance: none;
     border: 0;
     background: none;
     cursor: pointer;
-    position: absolute;
+    position: relative;
     overflow: hidden;
+    margin-top: clamp(0.6rem, 2.5vh, 2.4rem);
     padding: 0.06em 0.06em 0.2em;
     line-height: 0.88;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(3rem, 10vw, 11rem);
+    font-size: clamp(2.6rem, 8.5vw, 9.5rem);
     letter-spacing: -0.01em;
     color: var(--ink);
     will-change: transform;
   }
   .hero__word-inner { display: block; will-change: transform; transition: color 0.3s ease; }
 
-  .hero__word--producto { left: 17%; top: 24%; }
-  .hero__word--visual   { left: 51%; top: 64%; }
+  /* el hover vive en la PALABRA (vira a azul), no en la imagen */
+  .hero__word:hover .hero__word-inner,
+  .hero__word.is-hover .hero__word-inner { color: var(--blue); }
 
   .hero__word:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
 
   @media (max-width: 720px) {
-    .hero__rect--a { left: 10%; top: 13%; width: 64%; height: 25%; }
-    .hero__word--producto { left: 7%; top: 24%; }
-    .hero__rect--b { left: 26%; top: 53%; width: 64%; height: 25%; }
-    .hero__word--visual { left: 20%; top: 64%; }
-    .hero__word { font-size: clamp(2.6rem, 17vw, 5.5rem); }
+    /* móvil: columnas apiladas y centradas, producto arriba / visual abajo */
+    .hero__cat { transform: translateX(-50%); left: 50%; }
+    .hero__cat--producto { top: 7%; }
+    .hero__cat--visual   { top: 52%; }
+    .hero__cut { height: 26vh; }
+    .hero__cut-img { max-width: 62vw; }
+    .hero__word { font-size: clamp(2.6rem, 16vw, 5.5rem); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero__rect { clip-path: none !important; }
-    .hero__rect-img { transition: none; }
+    .hero__cut-img { transition: none; }
     .hero__word-inner { transform: none !important; }
   }
 </style>
@@ -127,15 +141,15 @@ import visualImg from '../../assets/projects/tito.png';
   const root = document.querySelector<HTMLElement>('[data-hero]');
   if (root) {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const rects = [...root.querySelectorAll<HTMLElement>('.hero__rect')];
+    const cuts = [...root.querySelectorAll<HTMLElement>('.hero__cut')];
     const inners = [...root.querySelectorAll<HTMLElement>('.hero__word-inner')];
 
-    // recuadro azul → al pasar por la palabra o el rect, se revela la imagen
+    // hover de la categoría (palabra o recorte) → resalta la PALABRA (azul)
     (['producto', 'visual'] as const).forEach((cat) => {
-      const rect = root.querySelector<HTMLElement>(`.hero__rect[data-cat="${cat}"]`);
-      if (!rect) return;
-      const on = () => rect.classList.add('is-hover');
-      const off = () => rect.classList.remove('is-hover');
+      const word = root.querySelector<HTMLElement>(`.hero__word[data-cat="${cat}"]`);
+      if (!word) return;
+      const on = () => word.classList.add('is-hover');
+      const off = () => word.classList.remove('is-hover');
       root.querySelectorAll<HTMLElement>(`[data-cat="${cat}"]`).forEach((el) => {
         el.addEventListener('mouseenter', on);
         el.addEventListener('mouseleave', off);
@@ -145,17 +159,16 @@ import visualImg from '../../assets/projects/tito.png';
     });
 
     if (!reduced) {
-      // entrada: los rectángulos se descubren de izquierda a derecha; las palabras
-      // suben tras su máscara (overflow del botón). Solo clip-path / transform.
-      gsap.set(rects, { clipPath: 'inset(0 100% 0 0)' });
+      // entrada: los recortes funden (opacidad — el transform lo gobierna el parallax, y la
+      // escala del hover vive en el <img> por CSS); las palabras suben tras su máscara.
+      gsap.set(cuts, { autoAlpha: 0 });
       gsap.set(inners, { yPercent: 118 });
 
       gsap.timeline({ delay: 0.12 })
-        .to(rects, { clipPath: 'inset(0 0% 0 0)', duration: 0.9, ease: 'power3.inOut', stagger: 0.12 })
-        .to(inners, { yPercent: 0, duration: 0.95, ease: 'power4.out', stagger: 0.1 }, 0.28);
+        .to(cuts, { autoAlpha: 1, duration: 0.95, ease: 'power3.out', stagger: 0.12 })
+        .to(inners, { yPercent: 0, duration: 0.95, ease: 'power4.out', stagger: 0.1 }, 0.2);
 
-      // parallax por puntero: cada capa con profundidad distinta — el desfase entre
-      // rect y palabra hace que el cruce respire al mover el cursor.
+      // parallax por puntero: cada capa con profundidad distinta
       const layers = [...root.querySelectorAll<HTMLElement>('[data-parallax]')].map((el) => ({
         depth: parseFloat(el.dataset.depth || '1'),
         x: gsap.quickTo(el, 'x', { duration: 0.7, ease: 'power3' }),
