@@ -18,6 +18,9 @@ const { title = 'Lynn Carré — Portafolio' } = Astro.props;
     <title>{title}</title>
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
     <link rel="stylesheet" href="https://use.typekit.net/ste8qmj.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton+SC&family=42dot+Sans:wght@400;500;700&display=swap" />
     <style is:inline>
       /* ESTADO DE PRIMER PINTADO — render-blocking (inline en el <head>), no depende de global.css ni
          de los estilos scoped, que en dev se inyectan por JS y llegan tarde con port-forwarding.
@@ -26,7 +29,7 @@ const { title = 'Lynn Carré — Portafolio' } = Astro.props;
 
       [data-landing] { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: #111; }
       [data-landing] .landing__copy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: clamp(24px, 4vw, 80px); text-align: center; pointer-events: none; }
-      [data-landing] .landing__headline { margin: 0; color: #eaeaea; font-weight: 700; line-height: 1.06; letter-spacing: -0.01em; font-size: clamp(1.5rem, 6vw, 6rem); white-space: nowrap; font-family: "clother", "Avenir Next", "Futura", "Century Gothic", system-ui, sans-serif; }
+      [data-landing] .landing__headline { margin: 0; color: #eaeaea; font-weight: 700; line-height: 1.06; letter-spacing: 0; font-size: clamp(1.5rem, 6vw, 6rem); white-space: nowrap; font-family: "Anton SC", "Arial Narrow", "Avenir Next", system-ui, sans-serif; }
       [data-landing] .landing__line { display: block; overflow: hidden; padding-bottom: 0.08em; }
       /* el titular sube por animación CSS (sin depender de JS): se ve igual al primer pintado */
       [data-landing] .landing__line-inner { display: block; animation: landingRise 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both; }

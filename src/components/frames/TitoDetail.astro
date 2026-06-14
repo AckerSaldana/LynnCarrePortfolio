@@ -1,0 +1,238 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Signature from '../ui/Signature.astro';
+
+// Imágenes en src/assets/projects/tito/. El nombre de archivo (sin extensión, en
+// minúsculas) es la "llave": deja un archivo con ese nombre y reemplaza el placeholder.
+const glob = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/tito/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const byName: Record<string, ImageMetadata> = {};
+for (const [path, img] of Object.entries(glob)) {
+  byName[(path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase()] = img;
+}
+
+// --- mapa de slots → archivo esperado ---
+const hero        = byName['hero']; // imagotipo (blob naranja)
+const composition = byName['1'];    // logotipo «Tito» con formas
+
+// liga al brand book (cuando la tengas, reemplázala aquí)
+const brandBookUrl = '#';
+---
+
+<article
+  class="bd"
+  data-detail="tito"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Tito"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="bd__scroll" data-detail-scroll>
+    <header class="bd__bar">
+      <button type="button" class="bd__back" data-detail-close aria-label="Volver a proyectos visuales">← volver</button>
+      <span class="bd__tag">diseño visual</span>
+    </header>
+
+    {/* ---------- hero: imagotipo + título encimado ---------- */}
+    <section class="bd__hero" data-bd-block>
+      <figure class="bd__hero-img">
+        {hero
+          ? <Image src={hero} alt="Tito — imagotipo" widths={[600, 900, 1240]} sizes="(max-width: 920px) 88vw, 680px" />
+          : <div class="bd__ph bd__ph--hero">hero.png</div>}
+      </figure>
+      <h1 class="bd__display bd__display--two">TITO<br />EL JUGUETITO</h1>
+    </section>
+
+    {/* ---------- intro ---------- */}
+    <div class="bd__intro" data-bd-block>
+      <p>Tito es un juguete modular diseñado en colaboración con el <strong>Tecnológico de Monterrey</strong> y el <strong>DIF Ciudad</strong> de la inclusión para niños con Trastorno del Espectro Autista (TEA), el cual tiene como objetivo proporcionar apoyo en las diversas necesidades sensoriales, cognitivas y motrices de los mismos, así como el facilitar la autorregulación de estos ante momentos de crisis.</p>
+      <p>Partiendo del concepto de la modularidad del juguete y tomando como principal enfoque las formas divertidas y los colores aptos para niños con TEA, se desarrolló el logotipo, así como la identidad visual y de marca del producto, con el objetivo de impulsar su posicionamiento en el mercado y redes sociales.</p>
+    </div>
+
+    {/* ---------- composición / logotipo ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {composition
+        ? <Image src={composition} alt="Tito — identidad visual" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">1.png — identidad visual</div>}
+    </figure>
+
+    {/* ---------- brand book ---------- */}
+    <p class="bd__action" data-bd-block>
+      <a class="bd__brandbook" href={brandBookUrl} target="_blank" rel="noopener">Consulta el Brand Book aquí</a>
+    </p>
+
+    <Signature />
+  </div>
+</article>
+
+<style>
+  .bd {
+    position: fixed;
+    inset: 0;
+    z-index: 45; /* bajo el header (z-50): el nav del sitio queda visible sobre la página */
+    background: var(--paper);
+    color: var(--ink);
+    opacity: 0;
+    visibility: hidden; /* gsap autoAlpha lo muestra (openDetail) */
+  }
+  .bd__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(4rem, 12vh, 8rem);
+    box-sizing: border-box;
+  }
+  .bd__scroll::-webkit-scrollbar { display: none; }
+
+  .bd__bar,
+  .bd__hero,
+  .bd__intro,
+  .bd__full,
+  .bd__action,
+  .bd :global(.signature) {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+
+  .bd__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: clamp(1.5rem, 4vh, 3rem);
+  }
+  .bd__back {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    transition: color 0.25s ease;
+  }
+  .bd__back:hover { color: var(--blue); }
+  .bd__tag {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+  }
+
+  .bd__hero { position: relative; }
+  .bd__hero-img { margin: 0; line-height: 0; text-align: center; }
+  .bd__hero-img :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    max-height: 56vh;
+    width: auto;
+    height: auto;
+  }
+  .bd__display {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(60%);
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 11vw, 8rem);
+    line-height: 0.86;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .bd__display--two {
+    white-space: normal;
+    font-size: clamp(2.2rem, 7.5vw, 5.4rem);
+    transform: translateY(60%);
+  }
+
+  .bd__intro {
+    margin-top: clamp(7rem, 15vh, 11rem);
+  }
+  .bd__intro p {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-body);
+    font-size: clamp(1.02rem, 1.35vw, 1.3rem);
+    line-height: 1.58;
+    text-align: center;
+    color: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  }
+  .bd__intro strong { font-weight: 700; }
+
+  .bd__full {
+    margin-top: clamp(3rem, 8vh, 6rem);
+  }
+  .bd__full :global(img) { width: 100%; height: auto; display: block; border-radius: 2px; }
+
+  .bd__action {
+    margin-top: clamp(2rem, 5vh, 3.5rem);
+    text-align: center;
+  }
+  .bd__brandbook {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(1rem, 1.3vw, 1.2rem);
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 2px;
+    transition: color 0.25s ease;
+  }
+  .bd__brandbook:hover { color: var(--blue); }
+
+  /* placeholder mientras falta una imagen */
+  .bd__ph {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+    border-radius: 2px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    text-align: center;
+  }
+  .bd__ph--hero { aspect-ratio: 4 / 3; min-height: 280px; max-width: 380px; margin-inline: auto; }
+  .bd__ph--full { aspect-ratio: 16 / 10; }
+
+  @media (max-width: 720px) {
+    .bd__display--two { font-size: clamp(1.8rem, 11vw, 4rem); }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  // Entrada en cascada al abrir. Selector específico de Tito para no duplicar observadores.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    document.querySelectorAll<HTMLElement>('[data-detail="tito"]').forEach((art) => {
+      const blocks = [
+        art.querySelector<HTMLElement>('.bd__bar'),
+        ...art.querySelectorAll<HTMLElement>('[data-bd-block]'),
+      ].filter((b): b is HTMLElement => !!b);
+      const mo = new MutationObserver(() => {
+        if (art.getAttribute('aria-hidden') === 'false') {
+          const scroll = art.querySelector<HTMLElement>('[data-detail-scroll]');
+          if (scroll) scroll.scrollTop = 0;
+          gsap.from(blocks, { y: 40, autoAlpha: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, overwrite: 'auto' });
+        }
+      });
+      mo.observe(art, { attributes: true, attributeFilter: ['aria-hidden'] });
+    });
+  }
+</script>

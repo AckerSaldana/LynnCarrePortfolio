@@ -1,0 +1,228 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Signature from '../ui/Signature.astro';
+
+// Imágenes en src/assets/projects/ellassueñan/. El nombre de archivo (sin extensión, en
+// minúsculas) es la "llave": deja un archivo con ese nombre y reemplaza el placeholder.
+const glob = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/ellassueñan/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const byName: Record<string, ImageMetadata> = {};
+for (const [path, img] of Object.entries(glob)) {
+  byName[(path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase()] = img;
+}
+
+// --- mapa de slots → archivo esperado ---
+const hero = byName['hero']; // panel «ingenia × Tec»     ← FALTA
+// 4 pósters de la campaña (Katya, Sandra, Cristina, Laura)  ← FALTAN
+const posters = [
+  { img: byName['1'], label: '1.png' },
+  { img: byName['2'], label: '2.png' },
+  { img: byName['3'], label: '3.png' },
+  { img: byName['4'], label: '4.png' },
+];
+---
+
+<article
+  class="bd"
+  data-detail="ellassueñan"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Ellas sueñan, ellas investigan, ellas transforman"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="bd__scroll" data-detail-scroll>
+    <header class="bd__bar">
+      <button type="button" class="bd__back" data-detail-close aria-label="Volver a proyectos visuales">← volver</button>
+      <span class="bd__tag">diseño visual</span>
+    </header>
+
+    {/* ---------- hero: panel + título encimado ---------- */}
+    <section class="bd__hero" data-bd-block>
+      <figure class="bd__hero-img">
+        {hero
+          ? <Image src={hero} alt="Ellas sueñan — Ingenia × Tec" widths={[600, 900, 1240]} sizes="(max-width: 920px) 88vw, 560px" />
+          : <div class="bd__ph bd__ph--hero">hero.png</div>}
+      </figure>
+      <h1 class="bd__display bd__display--three">ELLAS SUEÑAN,<br />ELLAS INVESTIGAN, ELLAS<br />TRANSFORMAN</h1>
+    </section>
+
+    {/* ---------- intro ---------- */}
+    <div class="bd__intro" data-bd-block>
+      <p>Se creó una campaña de comunicación y marketing sobre el Día Internacional de la Mujer y la Niña en la Ciencia para el Tec de Monterrey y la iniciativa Ingenia Mujeres en Ingeniería y Ciencias.</p>
+      <p>Se desarrolló el concepto «Ellas sueñan, ellas investigan, ellas transforman», el cual busca representar a las niñas pequeñas que sueñan con convertirse en grandes científicas, a las jóvenes que día a día estudian e investigan para cumplir sus sueños y convertirse en profesionistas, y a las científicas e ingenieras que ya están transformando al mundo con sus proyectos de ciencia e ingeniería.</p>
+      <p>A su vez, se seleccionó una paleta de colores e imágenes animadas que hicieran alusión al mismo.</p>
+      <p>La difusión de dicho material, flyers promocionales, stories y campus screens, se realizó a nivel nacional con el objetivo de motivar e inspirar a las niñas, adolescentes y mujeres de las áreas STEM a perseguir sus sueños y lograr sus metas.</p>
+    </div>
+
+    {/* ---------- composición: 4 pósters de la campaña ---------- */}
+    <div class="bd__grid4" data-bd-block>
+      {posters.map((p) => (
+        <figure>
+          {p.img
+            ? <Image src={p.img} alt="Póster de la campaña Ellas sueñan" widths={[400, 700]} sizes="(max-width: 720px) 88vw, 400px" />
+            : <div class="bd__ph bd__ph--poster">{p.label}</div>}
+        </figure>
+      ))}
+    </div>
+
+    <Signature />
+  </div>
+</article>
+
+<style>
+  .bd {
+    position: fixed;
+    inset: 0;
+    z-index: 45; /* bajo el header (z-50): el nav del sitio queda visible sobre la página */
+    background: var(--paper);
+    color: var(--ink);
+    opacity: 0;
+    visibility: hidden; /* gsap autoAlpha lo muestra (openDetail) */
+  }
+  .bd__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(4rem, 12vh, 8rem);
+    box-sizing: border-box;
+  }
+  .bd__scroll::-webkit-scrollbar { display: none; }
+
+  .bd__bar,
+  .bd__hero,
+  .bd__intro,
+  .bd__grid4,
+  .bd :global(.signature) {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+
+  .bd__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: clamp(1.5rem, 4vh, 3rem);
+  }
+  .bd__back {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    transition: color 0.25s ease;
+  }
+  .bd__back:hover { color: var(--blue); }
+  .bd__tag {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+  }
+
+  .bd__hero { position: relative; }
+  .bd__hero-img { margin: 0; line-height: 0; text-align: center; }
+  .bd__hero-img :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: min(100%, 460px);
+    max-height: 52vh;
+    width: auto;
+    height: auto;
+    border-radius: 2px;
+  }
+  .bd__display {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(68%);
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: normal;
+    text-align: center;
+    pointer-events: none;
+  }
+  .bd__display--three {
+    font-size: clamp(1.5rem, 4.6vw, 3.2rem);
+    transform: translateY(68%);
+  }
+
+  .bd__intro {
+    margin-top: clamp(7rem, 16vh, 12rem);
+  }
+  .bd__intro p {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-body);
+    font-size: clamp(1.02rem, 1.35vw, 1.3rem);
+    line-height: 1.58;
+    text-align: center;
+    color: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  }
+
+  /* grilla 2×2 de pósters */
+  .bd__grid4 {
+    margin-top: clamp(3rem, 8vh, 6rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(0.8rem, 1.8vw, 1.6rem);
+  }
+  .bd__grid4 figure { margin: 0; }
+  .bd__grid4 :global(img) { width: 100%; height: auto; display: block; border-radius: 2px; }
+
+  /* placeholder mientras falta una imagen */
+  .bd__ph {
+    display: grid;
+    place-items: center;
+    min-height: 200px;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+    border-radius: 2px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    text-align: center;
+  }
+  .bd__ph--hero { aspect-ratio: 4 / 5; min-height: 320px; max-width: 380px; margin-inline: auto; }
+  .bd__ph--poster { aspect-ratio: 3 / 4; }
+
+  @media (max-width: 720px) {
+    .bd__display--three { font-size: clamp(1.2rem, 6.2vw, 2.4rem); }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  // Entrada en cascada al abrir. Selector específico para no duplicar observadores.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    document.querySelectorAll<HTMLElement>('[data-detail="ellassueñan"]').forEach((art) => {
+      const blocks = [
+        art.querySelector<HTMLElement>('.bd__bar'),
+        ...art.querySelectorAll<HTMLElement>('[data-bd-block]'),
+      ].filter((b): b is HTMLElement => !!b);
+      const mo = new MutationObserver(() => {
+        if (art.getAttribute('aria-hidden') === 'false') {
+          const scroll = art.querySelector<HTMLElement>('[data-detail-scroll]');
+          if (scroll) scroll.scrollTop = 0;
+          gsap.from(blocks, { y: 40, autoAlpha: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, overwrite: 'auto' });
+        }
+      });
+      mo.observe(art, { attributes: true, attributeFilter: ['aria-hidden'] });
+    });
+  }
+</script>

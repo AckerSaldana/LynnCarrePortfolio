@@ -7,15 +7,19 @@ import daylightsSrc from '../../assets/projects/daylights.png';
 import salmonSrc from '../../assets/projects/salmon.png';
 import betterwareSrc from '../../assets/projects/betterware.png';
 
-// imágenes optimizadas para el hover de la lista de exposiciones (estilo "media highlights")
-const exSrc = async (src: ImageMetadata) => (await getImage({ src, width: 760, format: 'webp' })).src;
-const ex = {
-  bouquet: await exSrc(bouquetSrc),
-  biznaga: await exSrc(biznagaSrc),
-  daylights: await exSrc(daylightsSrc),
-  salmon: await exSrc(salmonSrc),
-  betterware: await exSrc(betterwareSrc),
-};
+// Imágenes del hover de "Exposiciones & reconocimientos".
+// Archivos propios en src/assets/about/reconocimientos/ (el nombre del archivo es la "llave").
+// Si falta el archivo, cae al render del proyecto como respaldo, así nunca se rompe.
+const recoGlob = import.meta.glob<ImageMetadata>(
+  '../../assets/about/reconocimientos/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const recoByName: Record<string, ImageMetadata> = {};
+for (const [path, img] of Object.entries(recoGlob)) {
+  recoByName[(path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase()] = img;
+}
+const recoSrc = async (slug: string, fallback: ImageMetadata) =>
+  (await getImage({ src: recoByName[slug] ?? fallback, width: 760, format: 'webp' })).src;
 
 // "Sobre mí": FRAME del stack (sustituye al antiguo IndexFrame), no es overlay. Se llega por el
 // Header (goTo) y solo se scrollea AQUÍ — el nav de fondo se apaga al entrar (index.astro) para que
@@ -44,15 +48,15 @@ const educacion = [
 ];
 
 const reconocimientos = [
-  { year: '2025', what: 'HORIZONTES', where: 'Lucerna 32, CDMX', img: ex.bouquet },
-  { year: '2025', what: 'Wanted Design / ICFF', where: 'Nueva York, EE. UU.', img: ex.daylights },
-  { year: '2025', what: 'BASE — Milano Design Week', where: 'Milán, Italia', img: ex.biznaga },
-  { year: '2025', what: 'Taller «Immersive Objects for Hybrid Living»', where: 'con Kevin Henry', img: ex.daylights },
-  { year: '2024', what: 'Museo MARCO', where: 'Monterrey, México', img: ex.bouquet },
-  { year: '2024', what: 'Taller «From Object to Context»', where: 'con Maya Kopytman y Gabriela Mirensky', img: ex.salmon },
-  { year: '2024', what: 'Diseñadora Destacada', where: 'Betterware Design Lab', img: ex.betterware },
-  { year: '2024', what: 'Wanted Design / ICFF', where: 'Nueva York, EE. UU.', img: ex.bouquet },
-  { year: '2024', what: 'Taller «Plant-Based»', where: 'con Henry Julier', img: ex.bouquet },
+  { year: '2025', what: 'HORIZONTES', where: 'Lucerna 32, CDMX', img: await recoSrc('horizontes', bouquetSrc) },
+  { year: '2025', what: 'Wanted Design / ICFF', where: 'Nueva York, EE. UU.', img: await recoSrc('wanted-icff-2025', daylightsSrc) },
+  { year: '2025', what: 'BASE — Milano Design Week', where: 'Milán, Italia', img: await recoSrc('base-milano', biznagaSrc) },
+  { year: '2025', what: 'Taller «Immersive Objects for Hybrid Living»', where: 'con Kevin Henry', img: await recoSrc('taller-immersive', daylightsSrc) },
+  { year: '2024', what: 'Museo MARCO', where: 'Monterrey, México', img: await recoSrc('marco', bouquetSrc) },
+  { year: '2024', what: 'Taller «From Object to Context»', where: 'con Maya Kopytman y Gabriela Mirensky', img: await recoSrc('taller-object-context', salmonSrc) },
+  { year: '2024', what: 'Diseñadora Destacada', where: 'Betterware Design Lab', img: await recoSrc('betterware-destacada', betterwareSrc) },
+  { year: '2024', what: 'Wanted Design / ICFF', where: 'Nueva York, EE. UU.', img: await recoSrc('wanted-icff-2024', bouquetSrc) },
+  { year: '2024', what: 'Taller «Plant-Based»', where: 'con Henry Julier', img: await recoSrc('taller-plant-based', bouquetSrc) },
 ];
 
 const habilidades = ['Liderazgo', 'Creatividad', 'Adaptabilidad', 'Eficiencia', 'Atención a los detalles', 'Perseverancia'];
@@ -190,12 +194,12 @@ const idiomas = ['Español — nativo', 'Inglés — avanzado', 'Francés — b�
     margin: 0;
     font-family: var(--font-display);
     font-weight: 700;
-    line-height: 1.02;
-    letter-spacing: -0.02em;
-    font-size: clamp(2.2rem, 6.4vw, 6rem);
-    max-width: 18ch;
+    line-height: 1.12;
+    letter-spacing: 0;
+    font-size: clamp(2rem, 5.6vw, 5rem);
+    max-width: 26ch;
   }
-  .about__lead-line { display: block; overflow: hidden; padding-bottom: 0.06em; }
+  .about__lead-line { display: block; overflow: hidden; padding-bottom: 0.14em; }
   .about__lead-inner { display: block; will-change: transform; }
 
   /* 2 · Bio editorial */
@@ -222,7 +226,7 @@ const idiomas = ['Español — nativo', 'Inglés — avanzado', 'Francés — b�
     font-family: var(--font-display);
     font-weight: 700;
     font-size: clamp(1.05rem, 1.5vw, 1.4rem);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   .about__block p {
     margin: 0;
@@ -250,8 +254,8 @@ const idiomas = ['Español — nativo', 'Inglés — avanzado', 'Francés — b�
     margin: 0 0 clamp(1.8rem, 4vh, 3rem);
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1;
+    letter-spacing: 0;
+    line-height: 1.06;
     font-size: clamp(2rem, 5vw, 4.5rem);
   }
   .about__sub {
@@ -295,7 +299,7 @@ const idiomas = ['Español — nativo', 'Inglés — avanzado', 'Francés — b�
   .about__year { font-size: 0.9rem; font-weight: 700; color: color-mix(in srgb, var(--ink) 55%, var(--paper)); }
   .about__what {
     font-family: var(--font-display); font-weight: 700;
-    font-size: clamp(1.1rem, 1.9vw, 1.7rem); letter-spacing: -0.01em;
+    font-size: clamp(1.1rem, 1.9vw, 1.7rem); letter-spacing: 0;
     transition: color 0.3s ease;
   }
   .about__where { font-size: clamp(0.9rem, 1.1vw, 1.05rem); color: color-mix(in srgb, var(--ink) 60%, var(--paper)); }

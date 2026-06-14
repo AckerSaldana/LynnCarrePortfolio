@@ -12,7 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^2.1.170",
+    "@anthropic-ai/claude-code": "^2.1.177",
     "@tailwindcss/vite": "^4.3.0",
     "astro": "^6.4.3",
     "claude": "^0.1.1",

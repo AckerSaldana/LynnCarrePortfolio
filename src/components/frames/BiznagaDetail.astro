@@ -1,0 +1,404 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Signature from '../ui/Signature.astro';
+
+// Todas las imágenes de Biznaga viven en src/assets/projects/biznaga/.
+// El nombre de archivo (sin extensión, en minúsculas) es la "llave": deja un archivo
+// con ese nombre en la carpeta y reemplaza el placeholder automáticamente.
+const glob = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/biznaga/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const byName: Record<string, ImageMetadata> = {};
+for (const [path, img] of Object.entries(glob)) {
+  byName[(path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase()] = img;
+}
+
+// --- mapa de slots → archivo esperado ---
+const hero     = byName['7'];          // set de madera, vista superior (protagonista)
+const sketch   = byName['boceto'];     // bocetos de utensilios            ← FALTA
+const shotA    = byName['5'];          // prototipos en yeso (toma completa)
+const shotB    = byName['6'];          // productos de madera (toma completa)
+
+// logos: {img, label}. Si falta la imagen, se pinta un placeholder con el nombre del archivo.
+const exhibitionLogos = [
+  { img: byName['milano'], label: 'milano.png' },
+  { img: byName['base'],   label: 'base.png' },
+];
+const publicationLogos = [
+  { img: byName['dezeen'],       label: 'dezeen.png' },
+  { img: byName['designaholic'], label: 'designaholic.png' },
+];
+---
+
+<article
+  class="bd"
+  data-detail="biznaga"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Biznaga"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="bd__scroll" data-detail-scroll>
+    <button type="button" class="bd__back" data-detail-close aria-label="Volver a productos">← volver</button>
+
+    {/* ---------- hero: producto + título encimado ---------- */}
+    <section class="bd__hero" data-bd-block>
+      <figure class="bd__hero-img">
+        {hero
+          ? <Image src={hero} alt="Biznaga — set de utensilios de cocina" widths={[600, 900, 1240]} sizes="(max-width: 920px) 88vw, 760px" />
+          : <div class="bd__ph bd__ph--hero">7.png</div>}
+      </figure>
+      <h1 class="bd__display">BIZNAGA</h1>
+    </section>
+
+    {/* ---------- intro ---------- */}
+    <p class="bd__intro" data-bd-block>
+      Biznaga es un diseño que surge tomando como punto de partida el tema «Otras Metáforas».
+      Tomando la pregunta «¿Cómo podemos recuperar el conocimiento vernáculo como fuente de
+      inspiración?» y respondiéndola al sumergirse en las metáforas incrustadas en la vida
+      cotidiana, es decir, utilizando los diversos contextos y circunstancias de México como
+      nuevas formas de ver y de crear diseño.
+    </p>
+
+    {/* ---------- boceto ---------- */}
+    <figure class="bd__sketch" data-bd-block>
+      {sketch
+        ? <Image src={sketch} alt="Bocetos del proceso de Biznaga" widths={[600, 1000]} sizes="(max-width: 920px) 88vw, 560px" />
+        : <div class="bd__ph bd__ph--sketch">boceto.png — bocetos del proceso</div>}
+    </figure>
+
+    {/* ---------- usuario clave ---------- */}
+    <section class="bd__center" data-bd-block>
+      <svg class="bd__icon" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="4" aria-hidden="true">
+        <circle cx="40" cy="26" r="15" />
+        <path d="M14 70c0-14.4 11.6-26 26-26s26 11.6 26 26" stroke-linecap="round" />
+      </svg>
+      <h2 class="bd__head">USUARIO CLAVE</h2>
+      <p class="bd__lede">Niños de 6 a 8 años que padecen algún tipo de discapacidad visual.</p>
+    </section>
+
+    {/* ---------- insight ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">INSIGHT</h2>
+      <p class="bd__lede">
+        Los niños con discapacidad visual desarrollan autonomía y confianza a través de la práctica
+        independiente, pero la mayoría de los utensilios de cocina no están diseñados para ser
+        comprendidos mediante el tacto.
+      </p>
+    </section>
+
+    {/* ---------- proceso / solución ---------- */}
+    <div class="bd__prose" data-bd-block>
+      <p>Biznaga es una familia de productos de cocina desarrollados para niños que padecen discapacidad visual y que busca introducirlos, por medio de sus formas, de una manera fácil y sencilla a actividades «comunes», como lo puede ser el cocinar.</p>
+      <p>Con este producto se busca facilitar el desarrollo de las habilidades motrices, así como generar cierto grado de independencia que les permita a los niños desenvolverse de la mejor forma posible en el futuro. A su vez, busca responder la poca disponibilidad de productos de cocina desarrollados para personas con dicha discapacidad.</p>
+    </div>
+
+    {/* ---------- toma completa: prototipos ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {shotA
+        ? <Image src={shotA} alt="Prototipos de Biznaga" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">5.png</div>}
+    </figure>
+
+    {/* ---------- materiales ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">MATERIALES</h2>
+      <p class="bd__lede">Elaborado en madera de abeto, tipo de madera caracterizada por su ligereza y resistencia, en un proceso de torno.</p>
+    </section>
+
+    {/* ---------- costo ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">COSTO</h2>
+      <p class="bd__price">$4,700.00 MXN</p>
+    </section>
+
+    {/* ---------- toma completa: producto final ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {shotB
+        ? <Image src={shotB} alt="Biznaga en madera" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">6.png</div>}
+    </figure>
+
+    {/* ---------- metáfora ---------- */}
+    <div class="bd__prose" data-bd-block>
+      <p>La metáfora que inspiró este proyecto es la biznaga de yeso, una variante de la planta endémica del norte de México que recientemente se encontró en peligro de extinción. La biznaga, planta de formas curvas, redondas y orgánicas, crece en condiciones áridas y semiáridas de la Sierra Madre Oriental en el estado de Nuevo León, adaptándose de una manera determinante a los hábitats y climas extremos de la región.</p>
+      <p>Tomando la resiliencia de dicha planta para adaptarse a las condiciones naturales del entorno, así como la «poca» disponibilidad de la misma en el entorno natural, es que surge Biznaga.</p>
+    </div>
+
+    {/* ---------- exhibido en ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">EXHIBIDO EN</h2>
+      <div class="bd__logos">
+        {exhibitionLogos.map((logo) => (
+          <div class="bd__logo">
+            {logo.img ? <Image src={logo.img} alt="" width={560} /> : <div class="bd__ph bd__ph--logo">{logo.label}</div>}
+          </div>
+        ))}
+      </div>
+      <div class="bd__prose bd__prose--center">
+        <p>Biznaga se exhibió del 7 al 13 de abril del 2025 en las prominentes plataformas de <strong>Milano Design Week</strong> y <strong>BASE Milano</strong>, la feria de diseño más importante del mundo. Así como <strong>HORIZONTES</strong>, exhibición nacional de los mejores proyectos de diseño del Tec de Monterrey.</p>
+      </div>
+    </section>
+
+    {/* ---------- publicado en ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">PUBLICADO EN</h2>
+      <div class="bd__logos">
+        {publicationLogos.map((logo) => (
+          <div class="bd__logo">
+            {logo.img ? <Image src={logo.img} alt="" width={560} /> : <div class="bd__ph bd__ph--logo">{logo.label}</div>}
+          </div>
+        ))}
+      </div>
+      <p class="bd__prose bd__prose--center">
+        Biznaga ha sido publicado en importantes revistas y plataformas de diseño como
+        <span class="bd__link">Dezeen</span> y <span class="bd__link">Designaholic</span>.
+      </p>
+    </section>
+
+    <Signature />
+  </div>
+</article>
+
+<style>
+  .bd {
+    position: fixed;
+    inset: 0;
+    z-index: 45; /* bajo el header (z-50): el nav del sitio queda visible sobre la página */
+    background: var(--paper);
+    color: var(--ink);
+    opacity: 0;
+    visibility: hidden; /* gsap autoAlpha lo muestra (openDetail) */
+  }
+  .bd__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(4rem, 12vh, 8rem);
+    box-sizing: border-box;
+  }
+  .bd__scroll::-webkit-scrollbar { display: none; }
+
+  .bd__hero,
+  .bd__intro,
+  .bd__sketch,
+  .bd__center,
+  .bd__prose,
+  .bd__full,
+  .bd :global(.signature) {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+
+  .bd__back {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    display: block;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    transition: color 0.25s ease;
+    margin: 0 auto clamp(1.5rem, 4vh, 3rem);
+    max-width: 840px;
+    width: 100%;
+    text-align: left;
+  }
+  .bd__back:hover { color: var(--blue); }
+
+  .bd__hero { position: relative; }
+  .bd__hero-img { margin: 0; line-height: 0; text-align: center; }
+  .bd__hero-img :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    max-height: 72vh;
+    width: auto;
+    height: auto;
+  }
+  .bd__display {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translate(-50%, 52%);
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 12vw, 9rem);
+    line-height: 0.86;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .bd__intro {
+    margin-top: clamp(8rem, 17vh, 12rem);
+    font-family: var(--font-body);
+    font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+    line-height: 1.55;
+    text-align: center;
+    color: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  }
+
+  .bd__sketch {
+    margin-top: clamp(3rem, 8vh, 6rem);
+    text-align: center;
+  }
+  .bd__sketch :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: min(560px, 100%);
+    height: auto;
+    border-radius: 2px;
+  }
+
+  .bd__center {
+    margin-top: clamp(4rem, 10vh, 7.5rem);
+    text-align: center;
+  }
+  .bd__icon {
+    display: block; /* Tailwind pone svg en block: hay que centrarlo con margin auto */
+    width: clamp(72px, 9vw, 104px);
+    height: clamp(72px, 9vw, 104px);
+    color: var(--ink);
+    margin: 0 auto clamp(1rem, 2.5vh, 1.75rem);
+  }
+  .bd__head {
+    margin: 0 0 clamp(1rem, 2.5vh, 1.6rem);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    line-height: 0.95;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .bd__lede {
+    margin: 0 auto;
+    max-width: 50ch;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.3vw, 1.25rem);
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--ink) 82%, var(--paper));
+  }
+  .bd__price {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+    color: var(--blue);
+  }
+
+  .bd__prose {
+    margin-top: clamp(3.5rem, 9vh, 6.5rem);
+  }
+  .bd__prose p {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.25vw, 1.2rem);
+    line-height: 1.62;
+    color: color-mix(in srgb, var(--ink) 84%, var(--paper));
+  }
+  .bd__prose strong { font-weight: 700; }
+  .bd__prose--center {
+    margin-top: clamp(2rem, 5vh, 3rem);
+    max-width: 62ch;
+    text-align: center;
+  }
+  .bd__prose--center p { margin-bottom: 1.4rem; }
+
+  .bd__full {
+    margin-top: clamp(3.5rem, 9vh, 6rem);
+  }
+  .bd__full :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 2px;
+  }
+
+  /* logos: en fila, agrupados al centro (flex para que queden centrados sean 2 ó 3) */
+  .bd__logos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(1.25rem, 4vw, 4rem);
+    align-items: center;
+    margin-block: clamp(2rem, 5vh, 3.25rem);
+  }
+  .bd__logo {
+    flex: 0 0 auto;
+    width: clamp(150px, 20vw, 240px);
+    display: grid;
+    place-items: center;
+    min-height: clamp(96px, 13vw, 180px);
+  }
+  .bd__logo :global(img) {
+    width: auto;
+    height: auto;
+    max-width: 96%;
+    max-height: clamp(84px, 12vw, 156px);
+    object-fit: contain;
+  }
+
+  .bd__link {
+    color: var(--blue);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-weight: 600;
+  }
+
+  /* placeholders mientras falta una imagen (te marcan qué archivo va ahí) */
+  .bd__ph {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+    border-radius: 2px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    text-align: center;
+  }
+  .bd__ph--hero { aspect-ratio: 3 / 4; min-height: 320px; max-width: 360px; margin-inline: auto; }
+  .bd__ph--sketch { aspect-ratio: 16 / 10; }
+  .bd__ph--full { aspect-ratio: 16 / 11; }
+  .bd__ph--logo { min-height: 0; width: 100%; aspect-ratio: 3 / 2; }
+
+  @media (max-width: 720px) {
+    .bd__display { font-size: clamp(2.4rem, 16vw, 5rem); transform: translate(-50%, 40%); }
+    .bd__logos { gap: 1rem; }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  // Entrada en cascada al abrir (igual que Bouquet): cuando aria-hidden pasa a "false"
+  // los bloques suben en secuencia. El selector es específico de Biznaga para no
+  // duplicar observadores con otros detalles que comparten la clase .bd.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    document.querySelectorAll<HTMLElement>('[data-detail="biznaga"]').forEach((art) => {
+      const blocks = [
+        art.querySelector<HTMLElement>('.bd__back'),
+        ...art.querySelectorAll<HTMLElement>('[data-bd-block]'),
+      ].filter((b): b is HTMLElement => !!b);
+      const mo = new MutationObserver(() => {
+        if (art.getAttribute('aria-hidden') === 'false') {
+          const scroll = art.querySelector<HTMLElement>('[data-detail-scroll]');
+          if (scroll) scroll.scrollTop = 0;
+          gsap.from(blocks.slice(0, 6), { y: 40, autoAlpha: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, overwrite: 'auto' });
+        }
+      });
+      mo.observe(art, { attributes: true, attributeFilter: ['aria-hidden'] });
+    });
+  }
+</script>

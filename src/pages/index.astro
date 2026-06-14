@@ -2,7 +2,20 @@
 import Base from '../layouts/Base.astro';
 import HeroFrame from '../components/frames/HeroFrame.astro';
 import ProductCarousel from '../components/frames/ProductCarousel.astro';
-import ProjectDetail from '../components/frames/ProjectDetail.astro';
+import BouquetDetail from '../components/frames/BouquetDetail.astro';
+import BiznagaDetail from '../components/frames/BiznagaDetail.astro';
+import DaylightsDetail from '../components/frames/DaylightsDetail.astro';
+import BettercepilloDetail from '../components/frames/BettercepilloDetail.astro';
+import BonaterraDetail from '../components/frames/BonaterraDetail.astro';
+import SalmonDetail from '../components/frames/SalmonDetail.astro';
+import TitoDetail from '../components/frames/TitoDetail.astro';
+import ExpoIngenieriasDetail from '../components/frames/ExpoIngenieriasDetail.astro';
+import DecadasDetail from '../components/frames/DecadasDetail.astro';
+import EllasSuenanDetail from '../components/frames/EllasSuenanDetail.astro';
+import SacbeDetail from '../components/frames/SacbeDetail.astro';
+import ManualEicDetail from '../components/frames/ManualEicDetail.astro';
+import CocinaHabibiDetail from '../components/frames/CocinaHabibiDetail.astro';
+import OccidentalDetail from '../components/frames/OccidentalDetail.astro';
 import VisualIndex from '../components/frames/VisualIndex.astro';
 import VisualFlow from '../components/frames/VisualFlow.astro';
 import Header from '../components/ui/Header.astro';
@@ -36,6 +49,20 @@ const projects = [
     tag: 'diseño industrial',
     number: '04',
     body: ['— descripción de ejemplo — reemplazar con el texto del portafolio de Daylights.'],
+  },
+  {
+    slug: 'bettercepillo',
+    title: 'Bettercepillo',
+    tag: 'diseño industrial',
+    number: '05',
+    body: ['— descripción de ejemplo — el detalle usa su página dedicada (BettercepilloDetail).'],
+  },
+  {
+    slug: 'bonaterra',
+    title: 'Bonaterra',
+    tag: 'diseño industrial',
+    number: '06',
+    body: ['— descripción de ejemplo — el detalle usa su página dedicada (BonaterraDetail).'],
   },
 ];
 
@@ -125,7 +152,22 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
     <Contact email={profile.email} phone={profile.phone} />
   </div>
 
-  {projects.map((p) => <ProjectDetail slug={p.slug} title={p.title} tag={p.tag} number={p.number} body={p.body} />)}
+  {/* Cada proyecto tiene su página de producto dedicada. */}
+  <BouquetDetail />
+  <BiznagaDetail />
+  <DaylightsDetail />
+  <BettercepilloDetail />
+  <BonaterraDetail />
+  {/* Detalles de proyectos visuales (caso de estudio). El resto sigue usando el VisualFlow. */}
+  <SalmonDetail />
+  <TitoDetail />
+  <ExpoIngenieriasDetail />
+  <DecadasDetail />
+  <EllasSuenanDetail />
+  <SacbeDetail />
+  <ManualEicDetail />
+  <CocinaHabibiDetail />
+  <OccidentalDetail />
   <VisualFlow projects={visualProjects} />
 
   <div class="cursor-img" data-cursor-img aria-hidden="true"><img alt="" decoding="async" /></div>
@@ -161,7 +203,7 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
   import { createFrameNavigator, type FrameRef } from '../lib/observer';
   import { createVisualFlow } from '../lib/visualFlow';
   import { createScene } from '../lib/three/scene';
-  import { loadModel, hasModel, getModelTilt } from '../lib/three/models';
+  import { loadModel, hasModel, getModelTilt, getModelScale } from '../lib/three/models';
   import { Group, Color } from 'three';
 
   const stack = document.querySelector<HTMLElement>('[data-frames]');
@@ -225,7 +267,7 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
     const SPACING = REF_SPAN * 1.0;     // separación 3D entre modelos contiguos (tuneable)
     const NEIGHBOR_SCALE = 0.55;        // el modelo anterior/posterior se ve más chico (coverflow)
     const NEIGHBOR_WASH = 0.6;          // ...y más clarito (OPACO, no translúcido): se aclara hacia el fondo
-    const PAPER = new Color('#EAEAEA'); // color del fondo hacia el que se aclara el vecino
+    const PAPER = new Color('#FFFFFF'); // color del fondo hacia el que se aclara el vecino
     let carouselToken = 0;              // descarta layouts obsoletos si entras/sales rápido
     if (labelEls.length) gsap.set(labelEls, { xPercent: -50, yPercent: -50, autoAlpha: 0 });
 
@@ -252,8 +294,6 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
     // cada modelo vive en un pivot: el modelo gira solo en Y, el pivot hace el swap (sin chocar)
     const mounted = new Map<string, Group>();
     let sceneIndex = 0;
-
-    const exitDist = (pivot: Group) => ((pivot.userData.span as number | undefined) ?? 2) * 2.2;
 
     function rest(pivot: Group) {
       pivot.position.set(0, 0, 0);
@@ -294,7 +334,9 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       const model = await p;
       if (sceneHandle && !mounted.has(name)) {
         const pivot = new Group();
-        pivot.add(model);
+        const tilt = new Group(); // pose inclinada del modelo, separada del eje de giro
+        tilt.add(model);
+        pivot.add(tilt);
         sceneHandle.add(pivot);
         sceneHandle.frameObject(model); // centra el modelo dentro del pivot
         // normaliza todos los modelos al mismo span: en el coverflow conviven en una sola
@@ -305,6 +347,10 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         model.position.multiplyScalar(k); // -center → -k·center: sigue centrado tras escalar
         model.userData.span = REF_SPAN;
         pivot.userData.span = REF_SPAN;
+        // ajuste fino de tamaño relativo (tras normalizar): el span del pivote se queda en
+        // REF_SPAN (cámara y separación del coverflow intactas); solo el modelo se ve más chico/grande.
+        const disp = getModelScale(name);
+        if (disp !== 1) { model.scale.multiplyScalar(disp); model.position.multiplyScalar(disp); }
         pivot.userData.wash = { v: 0 }; // valor animable de "aclarado" del modelo (0=activo,1=vecino)
         // bouquet/daylights traen emissiveTexture + emissiveFactor BLANCO (pensado para
         // multiplicarse por esa textura casi negra). Quitamos la textura para que el aclarado por
@@ -316,10 +362,11 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
             if (m.emissive) { m.emissive.setHex(0x000000); m.emissiveIntensity = 1; } // sin glow base
           });
         });
-        pivot.rotation.x = getModelTilt(name); // inclina el pivot (eje de giro) para asomar la parte superior
+        tilt.rotation.x = getModelTilt(name); // pose inclinada en grupo interno: NO inclina el eje de giro
         pivot.visible = false;
-        // animación propia: giro lento continuo en Y, independiente del swap del pivot
-        if (!reduced) gsap.to(model.rotation, { y: '+=' + Math.PI * 2, duration: 32, ease: 'none', repeat: -1 });
+        // giro tipo tornamesa: el pivote gira en la vertical del MUNDO, así el modelo —aunque
+        // esté inclinado por dentro— rota parejo alrededor del eje vertical (sin "tumbear").
+        if (!reduced) gsap.to(pivot.rotation, { y: '+=' + Math.PI * 2, duration: 32, ease: 'none', repeat: -1 });
         mounted.set(name, pivot);
       }
       return mounted.get(name) ?? null;
@@ -364,7 +411,6 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         pivot.scale.setScalar(slot === 0 ? 1 : NEIGHBOR_SCALE); // vecinos más chicos
         (pivot.userData.wash ??= { v: 0 }).v = t;
         setPivotWash(pivot, t); // ...y más claritos (opacos)
-        pivot.rotation.x = getModelTilt(name);
         pivot.visible = true; // todos visibles → el anterior y el posterior asoman a los lados
       });
     }
@@ -438,83 +484,68 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
       return tl;
     }
 
-    // Swap: objeto y texto se mueven como una sola pieza — el saliente se desliza fuera con el
-    // mismo gesto del texto, y el entrante entra del mismo lado con idéntico ease/duración/tiempo.
+    // Disolución con profundidad (dolly dissolve): el frame saliente se desvanece retrocediendo
+    // (escala arriba, acelerando) y el entrante emerge desde un poco más atrás y se asienta a
+    // escala 1 (desacelerando). SIN desplazamiento vertical: ya no se siente como un scroll, sino
+    // como un corte de cámara. El canvas 3D del carrusel se funde en sincronía (mismo opacity +
+    // escala desde el CENTRO del viewport, así modelos y rótulos crecen juntos y alineados).
     function transition(from: HTMLElement, to: HTMLElement, dir: 1 | -1) {
       hideCursorImg(); // si saliste de un frame con preview sin que dispare mouseleave, límpiala
       const tl = gsap.timeline();
-      const fromPivot = from.dataset.model ? mounted.get(from.dataset.model) : undefined;
-      const toPivot = to.dataset.model ? mounted.get(to.dataset.model) : undefined;
       const fromCarousel = from.hasAttribute('data-carousel');
       const toCarousel = to.hasAttribute('data-carousel');
-      const enterStep = dir === 1 ? 0 : Number(to.dataset.steps) || 0; // step de entrada al carrusel
-      if (sceneHandle && (fromPivot || toPivot || fromCarousel || toCarousel)) sceneHandle.setActive(true);
+      const enterStep = dir === 1 ? 0 : Number(to.dataset.steps) || 0; // qué modelo queda centrado al entrar
+      if (sceneHandle && (fromCarousel || toCarousel)) sceneHandle.setActive(true);
+
+      // monta + coloca el carrusel entrante ANTES de la disolución (se revela al fundir el canvas)
+      const armCarousel = () => {
+        if (!(toCarousel && sceneHandle)) return;
+        sceneHandle.frameToSpan(REF_SPAN);
+        placeCarousel(enterStep);
+        layoutLabels(enterStep, false);
+      };
+      // al terminar de fundir hacia afuera el carrusel: oculta modelos y resetea el canvas
+      const clearFromCarousel = () => {
+        if (!fromCarousel) return;
+        hideCarousel();
+        if (canvas) gsap.set(canvas, { autoAlpha: 1, clearProps: 'transform' });
+      };
 
       if (reduced) {
-        gsap.set(to, { yPercent: 0, autoAlpha: 0 });
-        tl.to(from, { autoAlpha: 0, duration: 0.25 }, 0)
-          .to(to, { autoAlpha: 1, duration: 0.25 }, 0)
-          .set(from, { autoAlpha: 0 });
-        if (fromPivot) tl.set(fromPivot, { visible: false }, 0);
-        if (toPivot) {
-          rest(toPivot);
-          tl.set(toPivot, { visible: true }, 0);
-        }
-        if (toCarousel && sceneHandle) {
-          sceneHandle.frameToSpan(REF_SPAN);
-          placeCarousel(enterStep); // los modelos ya están en su sitio al aparecer el frame
-          layoutLabels(enterStep, false);
-        }
+        gsap.set(to, { autoAlpha: 0, scale: 1, yPercent: 0 });
+        armCarousel();
+        if (toCarousel && canvas) gsap.set(canvas, { autoAlpha: 0 });
+        tl.to(from, { autoAlpha: 0, duration: 0.3, ease: 'none' }, 0)
+          .to(to, { autoAlpha: 1, duration: 0.3, ease: 'none' }, 0);
+        if (toCarousel && canvas) tl.to(canvas, { autoAlpha: 1, duration: 0.3 }, 0);
+        if (fromCarousel) tl.add(clearFromCarousel, 0.3);
+        tl.set(from, { autoAlpha: 0 });
         return tl;
       }
 
-      // texto / frame editorial: sale primero, entra después (en sincronía con los objetos)
-      gsap.set(to, { yPercent: 100 * dir, autoAlpha: 1 });
-      tl.to(from, { yPercent: -100 * dir, duration: 0.6, ease: 'power2.in' }, 0)
-        .set(from, { autoAlpha: 0, yPercent: 0 }, 0.6)
-        .to(to, { yPercent: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
+      const OUT = 0.55; // el saliente se va
+      const IN = 0.85;  // el entrante llega
+      const LAG = 0.3;  // solape: el entrante arranca antes de que el saliente termine
 
-      // carrusel entrante: coloca los modelos (ya montados) y los desliza en Y JUNTO con el frame —
-      // así aparecen DURANTE el flip, no un segundo después (cuando recién corría onChange).
-      if (toCarousel && sceneHandle) {
-        sceneHandle.frameToSpan(REF_SPAN);
-        placeCarousel(enterStep);
-        carouselModels.forEach((name) => {
-          const pivot = mounted.get(name);
-          if (!pivot) return;
-          const enter = exitDist(pivot);
-          gsap.set(pivot.position, { y: -enter * dir }); // fuera de cuadro, mismo lado que el frame
-          tl.to(pivot.position, { y: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
-        });
-        layoutLabels(enterStep, false);
-      }
+      armCarousel();
+      // entrante: invisible y un poco "atrás" (más pequeño), listo para emerger
+      gsap.set(to, { autoAlpha: 0, scale: 0.92, yPercent: 0, transformOrigin: '50% 50%' });
+      if (toCarousel && canvas) gsap.set(canvas, { autoAlpha: 0, scale: 0.92, transformOrigin: '50% 50%' });
 
-      // objeto saliente: se va con el MISMO gesto que el texto (mismo lado, ease y tiempo)
-      if (fromPivot) {
-        rest(fromPivot);
-        const exit = exitDist(fromPivot);
-        tl.to(fromPivot.position, { y: exit * dir, duration: 0.6, ease: 'power2.in' }, 0)
-          .set(fromPivot, { visible: false }, 0.6);
-      }
-      // carrusel saliente: los tres modelos salen verticalmente junto al frame
-      if (fromCarousel) {
-        carouselModels.forEach((name) => {
-          const pivot = mounted.get(name);
-          if (!pivot || !pivot.visible) return;
-          const exit = exitDist(pivot);
-          tl.to(pivot.position, { y: exit * dir, duration: 0.6, ease: 'power2.in' }, 0)
-            .set(pivot, { visible: false }, 0.6);
-        });
-      }
-      // objeto entrante: entra como el texto — fuera de cuadro del mismo lado y se desliza
-      // a reposo con idéntico ease/duración/tiempo. Nunca se ve estático "apareciendo".
-      if (toPivot) {
-        rest(toPivot);
-        const enter = exitDist(toPivot);
-        gsap.set(toPivot.position, { x: 0, y: -enter * dir, z: 0 });
-        toPivot.visible = true;
-        tl.to(toPivot.position, { y: 0, duration: 0.85, ease: 'power3.out' }, 0.5);
-      }
+      // saliente: se desvanece retrocediendo
+      tl.to(from, { autoAlpha: 0, scale: 1.06, duration: OUT, ease: 'power2.in' }, 0);
+      if (fromCarousel && canvas) tl.to(canvas, { autoAlpha: 0, scale: 1.06, duration: OUT, ease: 'power2.in' }, 0);
+
+      // entrante: emerge y se asienta
+      tl.to(to, { autoAlpha: 1, scale: 1, duration: IN, ease: 'power3.out' }, LAG);
+      if (toCarousel && canvas) tl.to(canvas, { autoAlpha: 1, scale: 1, duration: IN, ease: 'power3.out' }, LAG);
+
+      if (fromCarousel) tl.add(clearFromCarousel, OUT);
+
+      // limpia los transforms residuales (matrix() inline deja el texto microborroso); el saliente
+      // queda oculto (autoAlpha 0) y el entrante a escala 1 sin transform.
+      tl.set([from, to], { clearProps: 'transform' });
+      if (canvas && (fromCarousel || toCarousel)) tl.set(canvas, { clearProps: 'transform' });
       return tl;
     }
 
@@ -699,7 +730,9 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         ease: 'power3.in',
         onComplete: () => el.setAttribute('aria-hidden', 'true'),
       });
-      nav.enable();
+      // restaura el nav según el frame de fondo: enable en el carrusel, disable si el detalle
+      // se abrió sobre un frame con scroll propio (p.ej. el índice visual).
+      syncNavForCurrentFrame();
     }
 
     // títulos de proyecto: hover muestra la imagen, click abre el detalle
@@ -709,12 +742,15 @@ const manifesto: { t: string; em?: 'steel' | 'bloom' }[] = [
         t.addEventListener('mouseleave', hideCursorImg);
       }
       t.addEventListener('click', () => {
-        // fila del índice visual → abre el flujo; proyecto de producto → abre su detalle
-        if (t.dataset.visual !== undefined && flow) {
+        const slug = t.dataset.project ?? '';
+        // visual: si el proyecto ya tiene página dedicada (caso de estudio) la abre; si no,
+        // cae al VisualFlow. Producto: abre su detalle.
+        if (t.dataset.visual !== undefined) {
           hideCursorImg();
-          flow.openBySlug(t.dataset.project ?? '');
+          if (document.querySelector(`[data-detail="${slug}"]`)) openDetail(slug);
+          else flow?.openBySlug(slug);
         } else {
-          openDetail(t.dataset.project);
+          openDetail(slug);
         }
       });
     });

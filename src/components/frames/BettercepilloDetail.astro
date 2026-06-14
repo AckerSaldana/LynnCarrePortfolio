@@ -1,0 +1,406 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Signature from '../ui/Signature.astro';
+
+// Imágenes en src/assets/projects/bettercepillo/. El nombre de archivo (sin extensión,
+// en minúsculas) es la "llave": deja un archivo con ese nombre y reemplaza el placeholder.
+const glob = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/bettercepillo/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const byName: Record<string, ImageMetadata> = {};
+for (const [path, img] of Object.entries(glob)) {
+  byName[(path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase()] = img;
+}
+
+// --- mapa de slots → archivo esperado ---
+const hero    = byName['hero'];      // render del cepillo (cabezal)              ← FALTA
+const sketch  = byName['boceto'];    // bocetos de variantes                      ← FALTA
+const shotA   = byName['1'];         // render diagonal (cepillo + espátula)
+const shotB   = byName['2'];         // render espátula en detalle                ← FALTA
+const catalog = byName['catalogo'];  // página del catálogo Betterware            ← FALTA
+const catalogs = byName['catalogos']; // tres catálogos en abanico                ← FALTA
+const badge   = byName['reconocimiento']; // medalla «Diseñador Destacado»        ← FALTA
+---
+
+<article
+  class="bd"
+  data-detail="bettercepillo"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Bettercepillo Limpiador"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="bd__scroll" data-detail-scroll>
+    <button type="button" class="bd__back" data-detail-close aria-label="Volver a productos">← volver</button>
+
+    {/* ---------- hero: render + título encimado ---------- */}
+    <section class="bd__hero" data-bd-block>
+      <figure class="bd__hero-img">
+        {hero
+          ? <Image src={hero} alt="Bettercepillo Limpiador" widths={[600, 900, 1240]} sizes="(max-width: 920px) 88vw, 760px" />
+          : <div class="bd__ph bd__ph--hero">hero.png</div>}
+      </figure>
+      <h1 class="bd__display bd__display--two">BETTERCEPILLO<br />LIMPIADOR</h1>
+    </section>
+
+    {/* ---------- intro ---------- */}
+    <p class="bd__intro" data-bd-block>
+      Desarrollado para el reto Betterware Design Lab, Bettercepillo Limpiador surge a partir de la
+      identificación de «dolores de cabeza» durante el lavado de trastes. A través de la investigación
+      del contexto de uso, se detectó que una de las principales molestias para los usuarios es la
+      acumulación de residuos difíciles de remover en platos, ollas y sartenes, así como la necesidad
+      de limpiar posteriormente el fregadero.
+    </p>
+
+    {/* ---------- boceto ---------- */}
+    <figure class="bd__sketch" data-bd-block>
+      {sketch
+        ? <Image src={sketch} alt="Bocetos de variantes del Bettercepillo" widths={[600, 1000]} sizes="(max-width: 920px) 88vw, 560px" />
+        : <div class="bd__ph bd__ph--sketch">boceto.png — bocetos del proceso</div>}
+    </figure>
+
+    {/* ---------- usuario clave ---------- */}
+    <section class="bd__center" data-bd-block>
+      <svg class="bd__icon" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="4" aria-hidden="true">
+        <circle cx="40" cy="26" r="15" />
+        <path d="M14 70c0-14.4 11.6-26 26-26s26 11.6 26 26" stroke-linecap="round" />
+      </svg>
+      <h2 class="bd__head">USUARIO CLAVE</h2>
+      <p class="bd__lede">Amas de casa de 18 a 55 años.</p>
+    </section>
+
+    {/* ---------- insight ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">INSIGHT</h2>
+      <p class="bd__lede">
+        Durante el lavado de trastes, las personas necesitan remover residuos adheridos y limpiar el
+        fregadero de manera constante, pero los utensilios tradicionales suelen resolver solo una
+        parte del proceso.
+      </p>
+    </section>
+
+    {/* ---------- solución ---------- */}
+    <div class="bd__prose" data-bd-block>
+      <p>El Bettercepillo Limpiador es un complemento multifunción para el fregadero, que integra ambas funciones en un solo producto mediante una cabeza de cepillo destinada a la limpieza general y una espátula incorporada para desprender residuos adheridos sin necesidad de herramientas adicionales. Esta configuración permite optimizar las tareas de limpieza y reducir la cantidad de accesorios requeridos dentro del área de lavado.</p>
+    </div>
+
+    {/* ---------- dos renders de producto ---------- */}
+    <div class="bd__duo" data-bd-block>
+      <figure>
+        {shotA
+          ? <Image src={shotA} alt="Bettercepillo — cepillo y espátula" widths={[400, 700]} sizes="(max-width: 720px) 88vw, 360px" />
+          : <div class="bd__ph">1.png</div>}
+      </figure>
+      <figure>
+        {shotB
+          ? <Image src={shotB} alt="Bettercepillo — espátula en detalle" widths={[400, 700]} sizes="(max-width: 720px) 88vw, 360px" />
+          : <div class="bd__ph">2.png</div>}
+      </figure>
+    </div>
+
+    {/* ---------- materiales ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">MATERIALES</h2>
+      <p class="bd__lede">Polipropileno por inyección de plástico con patrón de TPR y cerdas de nylon.</p>
+    </section>
+
+    {/* ---------- costo ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">COSTO</h2>
+      <p class="bd__price">$0.16 MXN <span class="bd__price-unit">x pieza</span></p>
+    </section>
+
+    {/* ---------- página del catálogo ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {catalog
+        ? <Image src={catalog} alt="Bettercepillo en el catálogo Betterware" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">catalogo.png — página del catálogo</div>}
+    </figure>
+
+    {/* ---------- catálogos en abanico ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {catalogs
+        ? <Image src={catalogs} alt="Catálogos Betterware" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">catalogos.png — catálogos en abanico</div>}
+    </figure>
+
+    {/* ---------- reconocimientos ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">RECONOCIMIENTOS</h2>
+      <div class="bd__prose bd__prose--center">
+        <p>El Bettercepillo Limpiador propone una solución a un problema común en hogares mexicanos. A su vez, el producto se propone en materiales y procesos de fabricación que resultan en un gran valor en cuanto a calidad y precio.</p>
+        <p>Por estas razones, fue seleccionado como uno de los diseños destacados del <strong>Reto Betterware Design Lab 2024</strong>.</p>
+      </div>
+      <figure class="bd__badge">
+        {badge
+          ? <Image src={badge} alt="Diseñador Destacado — Betterware Design Lab" width={560} />
+          : <div class="bd__ph bd__ph--badge">reconocimiento.png — medalla</div>}
+      </figure>
+    </section>
+
+    <Signature />
+  </div>
+</article>
+
+<style>
+  .bd {
+    position: fixed;
+    inset: 0;
+    z-index: 45; /* bajo el header (z-50): el nav del sitio queda visible sobre la página */
+    background: var(--paper);
+    color: var(--ink);
+    opacity: 0;
+    visibility: hidden; /* gsap autoAlpha lo muestra (openDetail) */
+  }
+  .bd__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(4rem, 12vh, 8rem);
+    box-sizing: border-box;
+  }
+  .bd__scroll::-webkit-scrollbar { display: none; }
+
+  .bd__hero,
+  .bd__intro,
+  .bd__sketch,
+  .bd__center,
+  .bd__prose,
+  .bd__duo,
+  .bd__full,
+  .bd :global(.signature) {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+
+  .bd__back {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    display: block;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    transition: color 0.25s ease;
+    margin: 0 auto clamp(1.5rem, 4vh, 3rem);
+    max-width: 840px;
+    width: 100%;
+    text-align: left;
+  }
+  .bd__back:hover { color: var(--blue); }
+
+  .bd__hero { position: relative; }
+  .bd__hero-img { margin: 0; line-height: 0; text-align: center; }
+  .bd__hero-img :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    max-height: 72vh;
+    width: auto;
+    height: auto;
+  }
+  .bd__display {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(60%);
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 12vw, 9rem);
+    line-height: 0.86;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  /* título de dos líneas (Bettercepillo Limpiador): centrado, sin nowrap */
+  .bd__display--two {
+    white-space: normal;
+    text-align: center;
+    font-size: clamp(2rem, 6.6vw, 4.8rem);
+    transform: translateY(60%);
+  }
+
+  .bd__intro {
+    margin-top: clamp(6.5rem, 14vh, 10rem);
+    font-family: var(--font-body);
+    font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+    line-height: 1.55;
+    text-align: center;
+    color: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  }
+
+  .bd__sketch {
+    margin-top: clamp(3rem, 8vh, 6rem);
+    text-align: center;
+  }
+  .bd__sketch :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: min(560px, 100%);
+    height: auto;
+    border-radius: 2px;
+  }
+
+  .bd__center {
+    margin-top: clamp(4rem, 10vh, 7.5rem);
+    text-align: center;
+  }
+  .bd__icon {
+    display: block; /* Tailwind pone svg en block: hay que centrarlo con margin auto */
+    width: clamp(72px, 9vw, 104px);
+    height: clamp(72px, 9vw, 104px);
+    color: var(--ink);
+    margin: 0 auto clamp(1rem, 2.5vh, 1.75rem);
+  }
+  .bd__head {
+    margin: 0 0 clamp(1rem, 2.5vh, 1.6rem);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    line-height: 0.95;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .bd__lede {
+    margin: 0 auto;
+    max-width: 50ch;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.3vw, 1.25rem);
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--ink) 82%, var(--paper));
+  }
+  .bd__price {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+    color: var(--blue);
+  }
+  .bd__price-unit {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 0.62em;
+    color: color-mix(in srgb, var(--ink) 70%, var(--paper));
+  }
+
+  .bd__prose {
+    margin-top: clamp(3.5rem, 9vh, 6.5rem);
+  }
+  .bd__prose p {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.25vw, 1.2rem);
+    line-height: 1.62;
+    color: color-mix(in srgb, var(--ink) 84%, var(--paper));
+  }
+  .bd__prose strong { font-weight: 700; }
+  .bd__prose--center {
+    margin-top: clamp(2rem, 5vh, 3rem);
+    max-width: 62ch;
+    text-align: center;
+  }
+  .bd__prose--center p { margin-bottom: 1.4rem; }
+
+  /* dos renders lado a lado */
+  .bd__duo {
+    margin-top: clamp(3rem, 8vh, 5.5rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(0.8rem, 1.8vw, 1.6rem);
+  }
+  /* celdas del mismo tamaño (cuadradas): la imagen se contiene sin recortar el producto,
+     aunque las fotos vengan con encuadres distintos */
+  .bd__duo figure {
+    margin: 0;
+    aspect-ratio: 1 / 1;
+    border-radius: 2px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  }
+  .bd__duo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .bd__full {
+    margin-top: clamp(3.5rem, 9vh, 6rem);
+  }
+  .bd__full :global(img) { width: 100%; height: auto; display: block; border-radius: 2px; }
+
+  /* medalla de reconocimiento: centrada y acotada */
+  .bd__badge {
+    margin: clamp(2.5rem, 6vh, 4rem) auto 0;
+    text-align: center;
+  }
+  .bd__badge :global(img) {
+    width: clamp(200px, 28vw, 300px);
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .bd__link {
+    color: var(--blue);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-weight: 600;
+  }
+
+  /* placeholders mientras falta una imagen (te marcan qué archivo va ahí) */
+  .bd__ph {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+    border-radius: 2px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    text-align: center;
+  }
+  .bd__ph--hero { aspect-ratio: 3 / 4; min-height: 320px; max-width: 360px; margin-inline: auto; }
+  .bd__ph--sketch { aspect-ratio: 16 / 10; }
+  .bd__ph--full { aspect-ratio: 16 / 11; }
+  .bd__ph--badge { aspect-ratio: 1 / 1; min-height: 0; width: clamp(200px, 28vw, 300px); margin-inline: auto; border-radius: 50%; }
+
+  @media (max-width: 720px) {
+    .bd__display--two { font-size: clamp(1.7rem, 9vw, 3.4rem); }
+    .bd__duo { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  // Entrada en cascada al abrir. Selector específico de Bettercepillo para no duplicar
+  // observadores con otros detalles que comparten la clase .bd.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    document.querySelectorAll<HTMLElement>('[data-detail="bettercepillo"]').forEach((art) => {
+      const blocks = [
+        art.querySelector<HTMLElement>('.bd__back'),
+        ...art.querySelectorAll<HTMLElement>('[data-bd-block]'),
+      ].filter((b): b is HTMLElement => !!b);
+      const mo = new MutationObserver(() => {
+        if (art.getAttribute('aria-hidden') === 'false') {
+          const scroll = art.querySelector<HTMLElement>('[data-detail-scroll]');
+          if (scroll) scroll.scrollTop = 0;
+          gsap.from(blocks.slice(0, 6), { y: 40, autoAlpha: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, overwrite: 'auto' });
+        }
+      });
+      mo.observe(art, { attributes: true, attributeFilter: ['aria-hidden'] });
+    });
+  }
+</script>

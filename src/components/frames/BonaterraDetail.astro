@@ -1,0 +1,305 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Signature from '../ui/Signature.astro';
+
+// Imágenes en src/assets/projects/bonaterra/. El nombre de archivo (sin extensión,
+// en minúsculas) es la "llave": deja un archivo con ese nombre y reemplaza el placeholder.
+const glob = import.meta.glob<ImageMetadata>(
+  '../../assets/projects/bonaterra/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true, import: 'default' },
+);
+const byName: Record<string, ImageMetadata> = {};
+for (const [path, img] of Object.entries(glob)) {
+  byName[(path.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase()] = img;
+}
+
+// --- mapa de slots → archivo esperado ---
+const hero    = byName['hero'];   // foto de la lámpara encendida              ← FALTA
+const sketch  = byName['boceto']; // bocetos de mobiliario                     ← FALTA
+const shotA   = byName['1'];      // render de las tres piezas (fondo verde)   ← FALTA
+const shotB   = byName['2'];      // manual de ensamble «Banquito»
+---
+
+<article
+  class="bd"
+  data-detail="bonaterra"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Bonaterra"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <div class="bd__scroll" data-detail-scroll>
+    <button type="button" class="bd__back" data-detail-close aria-label="Volver a productos">← volver</button>
+
+    {/* ---------- hero: foto + título encimado ---------- */}
+    <section class="bd__hero" data-bd-block>
+      <figure class="bd__hero-img">
+        {hero
+          ? <Image src={hero} alt="Bonaterra — colección de mobiliario" widths={[600, 900, 1240]} sizes="(max-width: 920px) 88vw, 760px" />
+          : <div class="bd__ph bd__ph--hero">hero.png</div>}
+      </figure>
+      <h1 class="bd__display">BONATERRA</h1>
+    </section>
+
+    {/* ---------- intro ---------- */}
+    <p class="bd__intro" data-bd-block>
+      Bonaterra es una colección de mobiliario diseñada para estudiantes y usuarios que requieren
+      espacios compactos para concentración y trabajo individual.
+    </p>
+
+    {/* ---------- boceto ---------- */}
+    <figure class="bd__sketch" data-bd-block>
+      {sketch
+        ? <Image src={sketch} alt="Bocetos de la colección Bonaterra" widths={[600, 1000]} sizes="(max-width: 920px) 88vw, 560px" />
+        : <div class="bd__ph bd__ph--sketch">boceto.png — bocetos del proceso</div>}
+    </figure>
+
+    {/* ---------- usuario clave ---------- */}
+    <section class="bd__center" data-bd-block>
+      <svg class="bd__icon" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="4" aria-hidden="true">
+        <circle cx="40" cy="26" r="15" />
+        <path d="M14 70c0-14.4 11.6-26 26-26s26 11.6 26 26" stroke-linecap="round" />
+      </svg>
+      <h2 class="bd__head">USUARIO CLAVE</h2>
+      <p class="bd__lede">Estudiantes de 18 a 24 años.</p>
+    </section>
+
+    {/* ---------- insight ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">INSIGHT</h2>
+      <p class="bd__lede">
+        Los estudiantes suelen adaptar espacios pequeños para múltiples actividades, pero el mobiliario
+        tradicional ocupa más espacio del necesario y rara vez responde a esta flexibilidad.
+      </p>
+    </section>
+
+    {/* ---------- propuesta ---------- */}
+    <div class="bd__prose" data-bd-block>
+      <p>La propuesta busca optimizar el uso del espacio mediante piezas multifuncionales de dimensiones contenidas, capaces de integrarse fácilmente en departamentos, dormitorios y áreas de estudio reducidas.</p>
+    </div>
+
+    {/* ---------- toma completa: render de la colección ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {shotA
+        ? <Image src={shotA} alt="Bonaterra — piezas de la colección" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">1.png</div>}
+    </figure>
+
+    {/* ---------- materiales ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">MATERIALES</h2>
+      <p class="bd__lede">Elaborado en MDF laminado, cortado en router y recubierto con cubrecantos.</p>
+    </section>
+
+    {/* ---------- costo ---------- */}
+    <section class="bd__center" data-bd-block>
+      <h2 class="bd__head">COSTO</h2>
+      <p class="bd__price">$1,600.00 MXN</p>
+    </section>
+
+    {/* ---------- toma completa: manual de ensamble ---------- */}
+    <figure class="bd__full" data-bd-block>
+      {shotB
+        ? <Image src={shotB} alt="Bonaterra — manual de ensamble Banquito" widths={[700, 1100, 1400]} sizes="(max-width: 920px) 90vw, 820px" />
+        : <div class="bd__ph bd__ph--full">2.png</div>}
+    </figure>
+
+    <Signature />
+  </div>
+</article>
+
+<style>
+  .bd {
+    position: fixed;
+    inset: 0;
+    z-index: 45; /* bajo el header (z-50): el nav del sitio queda visible sobre la página */
+    background: var(--paper);
+    color: var(--ink);
+    opacity: 0;
+    visibility: hidden; /* gsap autoAlpha lo muestra (openDetail) */
+  }
+  .bd__scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: clamp(5rem, 13vh, 9rem) var(--frame-pad) clamp(4rem, 12vh, 8rem);
+    box-sizing: border-box;
+  }
+  .bd__scroll::-webkit-scrollbar { display: none; }
+
+  .bd__hero,
+  .bd__intro,
+  .bd__sketch,
+  .bd__center,
+  .bd__prose,
+  .bd__full,
+  .bd :global(.signature) {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+
+  .bd__back {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    display: block;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    transition: color 0.25s ease;
+    margin: 0 auto clamp(1.5rem, 4vh, 3rem);
+    max-width: 840px;
+    width: 100%;
+    text-align: left;
+  }
+  .bd__back:hover { color: var(--blue); }
+
+  .bd__hero { position: relative; }
+  .bd__hero-img { margin: 0; line-height: 0; text-align: center; }
+  .bd__hero-img :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    max-height: 72vh;
+    width: auto;
+    height: auto;
+  }
+  .bd__display {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translate(-50%, 52%);
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 12vw, 9rem);
+    line-height: 0.86;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .bd__intro {
+    margin-top: clamp(8rem, 17vh, 12rem);
+    font-family: var(--font-body);
+    font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+    line-height: 1.55;
+    text-align: center;
+    color: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  }
+
+  .bd__sketch {
+    margin-top: clamp(3rem, 8vh, 6rem);
+    text-align: center;
+  }
+  .bd__sketch :global(img) {
+    display: block;
+    margin: 0 auto;
+    max-width: min(560px, 100%);
+    height: auto;
+    border-radius: 2px;
+  }
+
+  .bd__center {
+    margin-top: clamp(4rem, 10vh, 7.5rem);
+    text-align: center;
+  }
+  .bd__icon {
+    display: block; /* Tailwind pone svg en block: hay que centrarlo con margin auto */
+    width: clamp(72px, 9vw, 104px);
+    height: clamp(72px, 9vw, 104px);
+    color: var(--ink);
+    margin: 0 auto clamp(1rem, 2.5vh, 1.75rem);
+  }
+  .bd__head {
+    margin: 0 0 clamp(1rem, 2.5vh, 1.6rem);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    line-height: 0.95;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .bd__lede {
+    margin: 0 auto;
+    max-width: 50ch;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.3vw, 1.25rem);
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--ink) 82%, var(--paper));
+  }
+  .bd__price {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+    color: var(--blue);
+  }
+
+  .bd__prose {
+    margin-top: clamp(3.5rem, 9vh, 6.5rem);
+  }
+  .bd__prose p {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.25vw, 1.2rem);
+    line-height: 1.62;
+    color: color-mix(in srgb, var(--ink) 84%, var(--paper));
+  }
+
+  .bd__full {
+    margin-top: clamp(3.5rem, 9vh, 6rem);
+  }
+  .bd__full :global(img) { width: 100%; height: auto; display: block; border-radius: 2px; }
+
+  /* placeholders mientras falta una imagen (te marcan qué archivo va ahí) */
+  .bd__ph {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+    border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+    border-radius: 2px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    text-align: center;
+  }
+  .bd__ph--hero { aspect-ratio: 3 / 4; min-height: 320px; max-width: 360px; margin-inline: auto; }
+  .bd__ph--sketch { aspect-ratio: 16 / 10; }
+  .bd__ph--full { aspect-ratio: 16 / 11; }
+
+  @media (max-width: 720px) {
+    .bd__display { font-size: clamp(2.4rem, 16vw, 5rem); transform: translate(-50%, 40%); }
+  }
+</style>
+
+<script>
+  import { gsap } from '../../lib/gsap';
+
+  // Entrada en cascada al abrir. Selector específico de Bonaterra para no duplicar
+  // observadores con otros detalles que comparten la clase .bd.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    document.querySelectorAll<HTMLElement>('[data-detail="bonaterra"]').forEach((art) => {
+      const blocks = [
+        art.querySelector<HTMLElement>('.bd__back'),
+        ...art.querySelectorAll<HTMLElement>('[data-bd-block]'),
+      ].filter((b): b is HTMLElement => !!b);
+      const mo = new MutationObserver(() => {
+        if (art.getAttribute('aria-hidden') === 'false') {
+          const scroll = art.querySelector<HTMLElement>('[data-detail-scroll]');
+          if (scroll) scroll.scrollTop = 0;
+          gsap.from(blocks.slice(0, 6), { y: 40, autoAlpha: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, overwrite: 'auto' });
+        }
+      });
+      mo.observe(art, { attributes: true, attributeFilter: ['aria-hidden'] });
+    });
+  }
+</script>
